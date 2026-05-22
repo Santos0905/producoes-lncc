@@ -1,0 +1,50 @@
+services:
+  # Serviço do Banco de Dados (CLONE)
+  db_clone:
+    image: postgres:15
+    container_name: producao_db_container_clone
+    restart: always
+    environment:
+      POSTGRES_USER: user_producao
+      POSTGRES_PASSWORD: password_producao
+      POSTGRES_DB: producao_intelectual
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data_clone:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_producao -d producao_intelectual"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      
+  # Serviço do Backend (FastAPI) - CLONE
+  backend_clone:
+    build: ./backend
+    container_name: fastapi_app_clone
+    restart: always
+    ports:
+      - "8001:8000"
+    environment:
+      - DATABASE_URL=postgresql://user_producao:password_producao@db_clone:5432/producao_intelectual
+    depends_on:
+      db_clone:
+        condition: service_healthy
+
+  # Serviço do Frontend (React) - CLONE
+  frontend_clone:
+    build: .
+    container_name: react_portal_clone
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=/api
+    volumes:
+      - .:/app
+      - react_portal_node_modules_clone:/app/node_modules
+    depends_on:
+      - backend_clone
+
+volumes:
+  postgres_data_clone: 
+  react_portal_node_modules_clone:
