@@ -18,16 +18,14 @@ class ProjectBibliographicProduction(Base):
     id = Column(Integer, primary_key=True, index=True)
 
 
+class ProjectTechnicalInnovation(Base):
+    __tablename__ = "project_technical_innovation"
+    id = Column(Integer, primary_key=True, index=True)
+
+
 class ProjectFunding(Base):
     __tablename__ = "project_funding"
     id = Column(Integer, primary_key=True, index=True)
 
 
-class TotalProjetosComAporte(Base):
-    __tablename__ = "total_projetos_com_aporte"
-    id = Column(Integer, primary_key=True, index=True)
 
-
-class ProjectTechnicalInnovation(Base):
-    __tablename__ = "project_technical_innovation"
-    id = Column(Integer, primary_key=True, index=True)

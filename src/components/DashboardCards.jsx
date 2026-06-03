@@ -99,7 +99,7 @@ export default function DashboardCards() {
           </article>
         </div>
 
-        {/* CARD 3: PROJETOS */}
+        {/* CARD 3: PROJETOS COM APORTE*/}
         <div className="col-12 col-md-6 col-lg-5 col-xl-3">
           <article className="card-hover-effect card h-100 border-0 p-3 text-center">
             <div className="mb-2">

@@ -9,15 +9,21 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# Configuração de Segurança para o Frontend
+allowed_origins = [
+    "http://localhost:5174",      
+    "http://localhost:5173",      
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
-# Dependência para o Banco de Dados PostgreSQL
 def get_db():
     db = SessionLocal()
     try:
@@ -25,7 +31,6 @@ def get_db():
     finally:
         db.close()
 
-# Dependência para o Banco de Dados MySQL - SEMPRE retorna conexão fresca
 def get_mysql_db():
     db = MySQLSessionLocal()
     try:
@@ -34,21 +39,58 @@ def get_mysql_db():
         db.close()
 
 @app.get("/api/producoes/lista")
-def listar_producoes(db: Session = Depends(get_db)):
-    return {
-        "artigos": db.query(models.Producao).filter(models.Producao.tipo == "Artigo").count(),
-        "livros": db.query(models.Producao).filter(models.Producao.tipo == "Livro").count(),
-        "patentes": db.query(models.Producao).filter(models.Producao.tipo == "Patente").count(),
-        "softwares": db.query(models.Producao).filter(models.Producao.tipo == "Software").count(),
-    }
+def listar_producoes(db: Session = Depends(get_mysql_db)):
+
+    try:
+        query = """
+        SELECT 
+            p.id,
+            p.description as titulo,
+            p.description as autores,
+            p.year as ano,
+            'Bibliográfica' as tipo
+        FROM project_bibliographic_production p
+        WHERE p.public = 1
+        UNION ALL
+        SELECT 
+            p.id,
+            p.description as titulo,
+            p.description as autores,
+            p.year as ano,
+            'Técnica/Inovação' as tipo
+        FROM project_technical_innovation p
+        WHERE p.public = 1
+        ORDER BY ano DESC
+        """
+        
+        result = db.execute(text(query)).fetchall()
+        
+        producoes = [
+            {
+                "id": row[0],
+                "titulo": row[1][:100] + "..." if row[1] and len(row[1]) > 100 else row[1] if row[1] else "Título não informado",
+                "autores": row[2][:80] + "..." if row[2] and len(row[2]) > 80 else row[2] if row[2] else "Autores não registrados",
+                "ano": row[3] if row[3] else "N/A",
+                "tipo": row[4] if row[4] else "Outros"
+            }
+            for row in result
+        ]
+        
+        print(f"[DEBUG] Retornando {len(producoes)} produções do MySQL")
+        return producoes
+        
+    except Exception as e:
+        print(f"[ERROR] Erro ao buscar lista de produções: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
 
 @app.get("/api/producoes/resumo")
 def resumo_producoes(db: Session = Depends(get_db)):
-    return db.query(models.Producao).all()
+    return {"status": "Endpoint descontinuado. Use /api/producoes/lista ou /api/producoes/totais"}
 
 @app.get("/api/health")
 def health_check(db: Session = Depends(get_mysql_db)):
-    """Verifica se o backend e MySQL estão saudáveis"""
     try:
         result = db.execute(text("SELECT 1")).scalar()
         return {
@@ -65,37 +107,30 @@ def health_check(db: Session = Depends(get_mysql_db)):
 
 @app.get("/api/producoes/totais")
 def totais_producoes(db: Session = Depends(get_mysql_db)):
-    """
-    Retorna os TOTAIS REAIS do MySQL:
-    - Card 1: Produções Totais = 430
-    - Card 2: Bibliográficas = 248
-    - Card 3: Projetos com Aporte = 113
-    - Card 4: Técnicas e Inovação = 69
-    """
-    
+
     try:
-        # Card 2: Produções Bibliográficas - COUNT de project_bibliographic_production
+        # Card 1: Produções Bibliográficas
         bibliographic_result = db.execute(
             text("SELECT COUNT(*) as cnt FROM project_bibliographic_production")
         ).fetchone()
         bibliographic_count = bibliographic_result[0] if bibliographic_result and bibliographic_result[0] else 0
         
-        # Card 4: Produções Técnicas e Inovação - COUNT de project_technical_innovation
+        # Card 2: Produções Técnicas e Inovação
         technical_result = db.execute(
             text("SELECT COUNT(*) as cnt FROM project_technical_innovation")
         ).fetchone()
         technical_count = technical_result[0] if technical_result and technical_result[0] else 0
         
-        # Card 3: Projetos com Aporte - COUNT de project_funding
+        # Card 3: Projetos com Aporte 
         projects_result = db.execute(
             text("SELECT COUNT(*) as cnt FROM project_funding")
         ).fetchone()
         projects_with_funding = projects_result[0] if projects_result and projects_result[0] else 0
         
-        # Card 1: Total de todas as produções
+        # Card 4: Total de todas as produções
         total_producoes = bibliographic_count + technical_count + projects_with_funding
         
-        print(f"[DEBUG] Bibliographic: {bibliographic_count}, Technical: {technical_count}, Funding: {projects_with_funding}, Total: {total_producoes}")
+        print(f"[DEBUG] Totais - Bibliographic: {bibliographic_count}, Technical: {technical_count}, Funding: {projects_with_funding}, Total: {total_producoes}")
         
         return {
             "total_producoes": int(total_producoes),
@@ -104,7 +139,7 @@ def totais_producoes(db: Session = Depends(get_mysql_db)):
             "technical": int(technical_count)
         }
     except Exception as e:
-        print(f"[ERROR] Erro ao buscar dados do MySQL: {e}")
+        print(f"[ERROR] Erro ao buscar totais: {e}")
         import traceback
         traceback.print_exc()
         return {

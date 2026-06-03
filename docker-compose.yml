@@ -27,6 +27,7 @@ services:
       - "8001:8000"
     environment:
       - DATABASE_URL=postgresql://user_producao:password_producao@db_clone:5432/producao_intelectual
+      - MYSQL_DATABASE_URL=mysql+pymysql://myuser:mypassword@host.docker.internal:3306/mydb
     depends_on:
       db_clone:
         condition: service_healthy
@@ -36,7 +37,7 @@ services:
     build: .
     container_name: react_portal_clone
     ports:
-      - "5173:5173"
+      - "5174:5173"
     environment:
       - VITE_API_URL=/api
     volumes:

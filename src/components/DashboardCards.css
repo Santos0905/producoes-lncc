@@ -11,13 +11,11 @@
   overflow: hidden;
 }
 
-/* Efeito de hover - Elevação */
 .card-hover-effect:hover {
   transform: translateY(-8px);
   box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.15);
 }
 
-/* Efeito de brilho ao passar o mouse */
 .card-hover-effect::before {
   content: '';
   position: absolute;
@@ -38,7 +36,6 @@
   left: 100%;
 }
 
-/* Animação do badge ao hover */
 .card-hover-effect:hover .badge {
   animation: badgeBounce 0.6s ease;
 }
@@ -55,7 +52,6 @@
   }
 }
 
-/* Animação dos números ao hover */
 .card-hover-effect:hover .display-6 {
   animation: numberPulse 0.3s ease;
   color: #0d6efd;
@@ -73,7 +69,6 @@
   }
 }
 
-/* Responsividade para telas pequenas */
 @media (max-width: 768px) {
   .card-hover-effect:hover {
     transform: translateY(-4px);

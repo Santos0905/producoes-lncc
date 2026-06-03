@@ -5,16 +5,20 @@ import api from '../services/api';
 const Producoes = () => {
   const [listaProducoes, setListaProducoes] = useState([]);
   const [carregandoLista, setCarregandoLista] = useState(true);
+  const [erroLista, setErroLista] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
+
+    setCarregandoLista(true);
+    setErroLista(null);
 
     api.get('/api/producoes/lista')
       .then(res => {
         if (!isMounted) return;
         console.log("DADOS EXATOS DA LISTA RECEBIDOS DO BACKEND DOCKER:", res.data);
 
-        if (res.data && Array.isArray(res.data)) {
+        if (Array.isArray(res.data)) {
           setListaProducoes(res.data);
         } else if (res.data && Array.isArray(res.data.producoes)) {
           setListaProducoes(res.data.producoes);
@@ -29,6 +33,7 @@ const Producoes = () => {
       .catch(err => {
         if (!isMounted) return;
         console.error("Erro ao buscar produções no backend:", err);
+        setErroLista("Erro ao carregar a lista de produções. Verifique a conexão com o backend.");
         setListaProducoes([]);
         setCarregandoLista(false);
       });
@@ -45,9 +50,30 @@ const Producoes = () => {
       <div className="mx-4 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="divide-y divide-gray-100">
           
-          {/* ⚠️ O bloco com o texto "Carregando listagem de produções..." foi completamente removido daqui */}
+          {carregandoLista && (
+            <div className="p-8 text-center">
+              <div className="inline-block">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+              </div>
+              <p className="text-gray-600 font-medium">Carregando produções...</p>
+              <p className="text-sm text-gray-500 mt-1">Por favor, aguarde enquanto buscamos os dados</p>
+            </div>
+          )}
 
-          {!carregandoLista && Array.isArray(listaProducoes) && listaProducoes.map((item, index) => {
+          {erroLista && !carregandoLista && (
+            <div className="p-6 bg-red-50 border-l-4 border-red-500">
+              <p className="text-red-700 font-medium">⚠️ {erroLista}</p>
+            </div>
+          )}
+
+          {!carregandoLista && !erroLista && listaProducoes.length === 0 && (
+            <div className="p-8 text-center">
+              <p className="text-gray-500 font-medium">Nenhuma produção encontrada</p>
+              <p className="text-sm text-gray-400 mt-1">Verifique se existem dados no banco de dados</p>
+            </div>
+          )}
+
+          {!carregandoLista && Array.isArray(listaProducoes) && listaProducoes.length > 0 && listaProducoes.map((item, index) => {
             const itemId = item && item.id ? item.id : `producao-${index}`;
 
             return (
