@@ -1,104 +1,298 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DashboardCards from '../components/DashboardCards';
 import api from '../services/api';
+import './Producoes.css';
+import useDebouncedValue from '../hooks/useDebouncedValue';
 
 const Producoes = () => {
   const [listaProducoes, setListaProducoes] = useState([]);
   const [carregandoLista, setCarregandoLista] = useState(true);
   const [erroLista, setErroLista] = useState(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const [tipoFiltro, setTipoFiltro] = useState('Todos');
+  const [anoFiltro, setAnoFiltro] = useState('');
+  const [filtroAporte, setFiltroAporte] = useState(false);
 
-    setCarregandoLista(true);
-    setErroLista(null);
+  // paginação real (backend)
+  const [pageSize] = useState(10);
 
-    api.get('/api/producoes/lista')
-      .then(res => {
-        if (!isMounted) return;
-        console.log("DADOS EXATOS DA LISTA RECEBIDOS DO BACKEND DOCKER:", res.data);
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
 
-        if (Array.isArray(res.data)) {
-          setListaProducoes(res.data);
-        } else if (res.data && Array.isArray(res.data.producoes)) {
-          setListaProducoes(res.data.producoes);
-        } else if (res.data && Array.isArray(res.data.data)) {
-          setListaProducoes(res.data.data);
-        } else {
-          console.error("A API não retornou um formato de lista esperado (Array):", res.data);
-          setListaProducoes([]);
-        }
-        setCarregandoLista(false);
-      })
-      .catch(err => {
-        if (!isMounted) return;
-        console.error("Erro ao buscar produções no backend:", err);
-        setErroLista("Erro ao carregar a lista de produções. Verifique a conexão com o backend.");
+  const [carregandoPagina, setCarregandoPagina] = useState(false);
+  const carregandoPaginaRef = useRef(false);
+
+  const totalItems = Array.isArray(listaProducoes) ? listaProducoes.length : 0;
+  const hasMore = totalItems < total;
+
+
+  const debouncedAno = useDebouncedValue(anoFiltro, 250);
+
+  const anoParam = useMemo(() => {
+    if (debouncedAno === '' || debouncedAno === null || debouncedAno === undefined) return null;
+    const n = Number(debouncedAno);
+    return Number.isFinite(n) ? n : null;
+  }, [debouncedAno]);
+
+  const params = useMemo(
+    () => ({
+      tipo: tipoFiltro === 'Todos' ? null : tipoFiltro,
+      ano: anoParam,
+      has_funding: filtroAporte ? true : null,
+    }),
+    [tipoFiltro, anoParam, filtroAporte]
+  );
+
+  const fetchPage = useCallback(
+    async ({ reset = false } = {}) => {
+      if (carregandoPaginaRef.current) return;
+
+      if (reset) {
+        setOffset(0);
         setListaProducoes([]);
-        setCarregandoLista(false);
-      });
+        setTotal(0);
+      }
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+      setCarregandoLista(!reset ? false : true);
+      setErroLista(null);
+      setCarregandoPagina(true);
+      carregandoPaginaRef.current = true;
+
+      try {
+        const res = await api.get('/api/producoes/pagina', {
+          params: {
+            ...params,
+            limit: pageSize,
+            offset: reset ? 0 : offset,
+          },
+        });
+
+        const dados = res.data?.items;
+        const totalBackend = res.data?.total;
+
+        setListaProducoes((prev) => {
+          if (reset) return Array.isArray(dados) ? dados : [];
+          const novos = Array.isArray(dados) ? dados : [];
+          return [...prev, ...novos];
+        });
+
+        if (typeof totalBackend === 'number') {
+          setTotal(totalBackend);
+        } else {
+          setTotal(0);
+        }
+
+        setCarregandoLista(false);
+      } catch (err) {
+        console.error('Erro ao buscar página de produções no backend:', err);
+        setErroLista('Erro ao carregar as produções. Verifique a conexão com o backend.');
+        setListaProducoes([]);
+        setTotal(0);
+        setCarregandoLista(false);
+      } finally {
+        setCarregandoPagina(false);
+        carregandoPaginaRef.current = false;
+      }
+    },
+    [params, pageSize, offset]
+  );
+
+  // ao trocar filtros, resetar e buscar 1ª página
+  useEffect(() => {
+    fetchPage({ reset: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipoFiltro, anoParam, filtroAporte]);
+
+  const loadMore = useCallback(() => {
+    if (!hasMore) return;
+    setOffset((prev) => prev + pageSize);
+  }, [hasMore, pageSize]);
+
+  useEffect(() => {
+    if (offset === 0) return;
+    fetchPage({ reset: false });
+  }, [offset, fetchPage]);
+
+  // Paginação é controlada apenas pelos botões (sem scroll automático)
+  const producoesVisiveis = listaProducoes;
+
+
+
 
   return (
-    <div className="space-y-6 py-4">
+    <div className="py-4">
       <DashboardCards />
 
-      <div className="mx-4 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="divide-y divide-gray-100">
+
+      <div className="mx-4 producoes-filtros">
+          <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+          <div>
+            <h3 className="h4 mb-0 fw-semibold" style={{ color: '#0f172a' }}>
+              Bibliografias
+            </h3>
+          </div>
+        </div>
+
+        {/* Abaixo de Bibliografias */}
+
+        {/* 1) Campo Ano */}
+        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ paddingTop: 6, paddingBottom: 8 }}>
+          <label htmlFor="anoFiltro" style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}>
+            Ano
+          </label>
+          <input
+            id="anoFiltro"
+            type="number"
+            className="form-control form-control-sm"
+            style={{ maxWidth: 140 }}
+            value={anoFiltro}
+            onChange={(e) => setAnoFiltro(e.target.value)}
+            placeholder="Ex: 2025"
+          />
+        </div>
+
+        {/* 2) Campo Tipo + Projetos com Aporte */}
+        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ paddingBottom: 2 }}>
+          <label htmlFor="tipoFiltro" style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}>
+            Tipo
+          </label>
+          <select
+            id="tipoFiltro"
+            className="form-select form-select-sm"
+            style={{ maxWidth: 240 }}
+            value={tipoFiltro}
+            onChange={(e) => setTipoFiltro(e.target.value)}
+          >
+            <option value="Bibliográfica">Bibliográfica</option>
+            <option value="Técnica/Inovação">Técnica/Inovação</option>
+            <option value="Todos">Todos</option>
+          </select>
+
+          <div className="form-check" style={{ marginLeft: 4 }}>
+            <input
+              id="filtroAporte"
+              className="form-check-input"
+              type="checkbox"
+              checked={filtroAporte}
+              onChange={(e) => setFiltroAporte(e.target.checked)}
+            />
+            <label
+              htmlFor="filtroAporte"
+              className="form-check-label"
+              style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}
+            >
+              Projetos com Aporte
+            </label>
+          </div>
+        </div>
+
+
+      </div>
+
+      <div className="mx-4 producoes-list-card" style={{ position: 'relative' }}>
+        {(carregandoLista || carregandoPagina) && (
+
+          <div className="producoes-loading">
+            <div
+              className="spinner-border"
+              role="status"
+              style={{ color: 'var(--lncc-blue)', width: 28, height: 28 }}
+            >
+              <span className="visually-hidden">Carregando...</span>
+            </div>
+            <p className="mt-2 mb-0" style={{ color: '#64748b', fontWeight: 600 }}>
+              Carregando bibliografias...
+            </p>
+            <p className="mb-0" style={{ color: '#94a3b8', fontSize: '.875rem' }}>
+              Por favor, aguarde enquanto buscamos os dados
+            </p>
+          </div>
+        )}
+
+        {erroLista && !carregandoLista && !carregandoPagina && (
+
+          <div className="p-4" style={{ background: '#fef2f2', borderLeft: '4px solid #ef4444' }}>
+            <p className="mb-0" style={{ color: '#b91c1c', fontWeight: 700 }}>
+              ⚠️ {erroLista}
+            </p>
+          </div>
+        )}
+
+        {!carregandoLista && !carregandoPagina && !erroLista && listaProducoes.length === 0 && (
+
+          <div className="producoes-empty">
+            <p className="mb-1" style={{ color: '#64748b', fontWeight: 600 }}>
+              Nenhuma produção encontrada
+            </p>
+            <p className="mb-0" style={{ color: '#94a3b8', fontSize: '.875rem' }}>
+              Verifique se existem dados no banco de dados
+            </p>
+          </div>
+        )}
+
+        {!carregandoLista && !carregandoPagina && Array.isArray(listaProducoes) && listaProducoes.length > 0 && (
+
+          <div className="producoes-list-header-divider">
+
+            {producoesVisiveis.map((item, index) => {
+              const itemId = item && item.id ? item.id : `producao-${index}`;
+
+              return (
+                <article key={itemId} className="producoes-item-card">
+                  <div className="d-flex align-items-start justify-content-between gap-3">
+                    <span className="producoes-type-badge">{(item && item.tipo) || 'Outros'}</span>
+                  </div>
+
+                  <h4 className="producoes-title producoes-title-single-line">
+                    {(item && item.titulo) || 'Título não informado'}
+                  </h4>
+
+                  <p className="producoes-meta">
+                    {(item && item.autores) || 'Autores não registrados'}
+                    <span className="producoes-meta-sep">•</span>
+                    {(item && item.ano) || 'Ano N/A'}
+                  </p>
+                </article>
+              );
+            })}
+
           
-          {carregandoLista && (
-            <div className="p-8 text-center">
-              <div className="inline-block">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
-              </div>
-              <p className="text-gray-600 font-medium">Carregando produções...</p>
-              <p className="text-sm text-gray-500 mt-1">Por favor, aguarde enquanto buscamos os dados</p>
-            </div>
-          )}
+            {total > pageSize && (
 
-          {erroLista && !carregandoLista && (
-            <div className="p-6 bg-red-50 border-l-4 border-red-500">
-              <p className="text-red-700 font-medium">⚠️ {erroLista}</p>
-            </div>
-          )}
+              <div className="producoes-pagination" style={{ padding: '0 1.5rem 1.25rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  style={{ border: '1px solid rgba(15,23,42,.15)', color: '#0f172a' }}
+                  onClick={() => setOffset((prev) => Math.max(0, prev - pageSize))}
+                  disabled={offset === 0 || carregandoPagina}
+                >
+                  Anterior
+                </button>
 
-          {!carregandoLista && !erroLista && listaProducoes.length === 0 && (
-            <div className="p-8 text-center">
-              <p className="text-gray-500 font-medium">Nenhuma produção encontrada</p>
-              <p className="text-sm text-gray-400 mt-1">Verifique se existem dados no banco de dados</p>
-            </div>
-          )}
-
-          {!carregandoLista && Array.isArray(listaProducoes) && listaProducoes.length > 0 && listaProducoes.map((item, index) => {
-            const itemId = item && item.id ? item.id : `producao-${index}`;
-
-            return (
-              <div key={itemId} className="p-6 hover:bg-gray-50/80 transition-colors duration-150">
-                <span className="inline-block text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">
-                  {(item && item.tipo) || 'Outros'}
+                <span style={{ margin: '0 0.75rem', color: '#64748b', fontWeight: 700 }}>
+                  Página {Math.floor(offset / pageSize) + 1} de {Math.ceil(total / pageSize)}
                 </span>
 
-                <h4 className="mt-2.5 text-base font-semibold text-gray-900 leading-snug">
-                  {(item && item.titulo) || 'Título não informado'}
-                </h4>
-
-                <p className="text-sm text-gray-500 mt-1.5 m-0">
-                  {(item && item.autores) || 'Autores não registrados'}{' '}
-                  <span className="text-gray-300 mx-1.5">•</span>{' '}
-                  {(item && item.ano) || 'Ano N/A'}
-                </p>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  style={{ border: '1px solid rgba(15,23,42,.15)', color: '#0f172a' }}
+                  onClick={() => setOffset((prev) => prev + pageSize)}
+                  disabled={!hasMore || carregandoPagina}
+                >
+                  Próxima
+                </button>
               </div>
-            );
-          })}
+            )}
 
-        </div>
+          </div>
+        )}
       </div>
+
     </div>
   );
 };
+
 
 export default Producoes;
