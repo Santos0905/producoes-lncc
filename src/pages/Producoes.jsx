@@ -11,7 +11,6 @@ const Producoes = () => {
 
   const [tipoFiltro, setTipoFiltro] = useState('Todos');
   const [anoFiltro, setAnoFiltro] = useState('');
-  const [filtroAporte, setFiltroAporte] = useState(false);
 
   // paginação real (backend)
   const [pageSize] = useState(10);
@@ -38,9 +37,8 @@ const Producoes = () => {
     () => ({
       tipo: tipoFiltro === 'Todos' ? null : tipoFiltro,
       ano: anoParam,
-      has_funding: filtroAporte ? true : null,
     }),
-    [tipoFiltro, anoParam, filtroAporte]
+    [tipoFiltro, anoParam]
   );
 
   const fetchPage = useCallback(
@@ -100,7 +98,7 @@ const Producoes = () => {
   // ao trocar filtros, resetar e buscar 1ª página
   useEffect(() => {
     fetchPage({ reset: true });
-  }, [tipoFiltro, anoParam, filtroAporte]);
+  }, [tipoFiltro, anoParam]);
 
   const loadMore = useCallback(() => {
     if (!hasMore) return;
@@ -164,25 +162,9 @@ const Producoes = () => {
           >
             <option value="Bibliográfica">Bibliográfica</option>
             <option value="Técnica/Inovação">Técnica/Inovação</option>
+            <option value="Financiamento">Projetos com Aporte</option>
             <option value="Todos">Todos</option>
           </select>
-
-          <div className="form-check" style={{ marginLeft: 4 }}>
-            <input
-              id="filtroAporte"
-              className="form-check-input"
-              type="checkbox"
-              checked={filtroAporte}
-              onChange={(e) => setFiltroAporte(e.target.checked)}
-            />
-            <label
-              htmlFor="filtroAporte"
-              className="form-check-label"
-              style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}
-            >
-              Projetos com Aporte
-            </label>
-          </div>
         </div>
 
 
