@@ -11,6 +11,8 @@ class Producao(Base):
     autores = Column(String)
     ano = Column(Integer)
     tipo = Column(String) 
+    subtipo = Column(String, nullable=True)  # Novo campo
+    local_publicacao = Column(String, nullable=True)  # Novo campo
 
 
 class ProjectBibliographicProduction(Base):
@@ -26,6 +28,4 @@ class ProjectTechnicalInnovation(Base):
 class ProjectFunding(Base):
     __tablename__ = "project_funding"
     id = Column(Integer, primary_key=True, index=True)
-
-
 

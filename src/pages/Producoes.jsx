@@ -4,6 +4,99 @@ import api from '../services/api';
 import './Producoes.css';
 import useDebouncedValue from '../hooks/useDebouncedValue';
 
+const stripPrefix = (value) => {
+  if (!value || typeof value !== 'string') return '';
+  return value.replace(/^(t[ií]tulo|titulo|pesquisa|nome|autor(es)?)[\s:–—-]+/i, '').trim();
+};
+
+const isNameString = (value) => {
+  if (!value || typeof value !== 'string') return false;
+  const normalized = value.trim();
+  return /[,;]|\s+e\s+|\s+and\s+/i.test(normalized) || /^[A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)+$/.test(normalized);
+};
+
+const removeAuthorSuffix = (value, authorsValue) => {
+  if (!value || typeof value !== 'string') return '';
+  let result = value.trim();
+
+  if (authorsValue && typeof authorsValue === 'string') {
+    const authorNormalized = authorsValue.trim();
+    const idx = result.toLowerCase().indexOf(authorNormalized.toLowerCase());
+    if (idx > 0) {
+      result = result.slice(0, idx).trim();
+    }
+  }
+
+  result = result.replace(/\s*\((?:por|by)\s+[^)]+\)$/i, '').trim();
+  result = result.replace(/\s+(?:por|by)\s+.+$/i, '').trim();
+  result = result.replace(/\s*[-–—]\s*[A-ZÀ-Ú][^\-–—|:]+$/i, '').trim();
+  result = result.replace(/\s*[|:]\s*[A-ZÀ-Ú][^\-–—|:]+$/i, '').trim();
+  return result;
+};
+
+const shouldCutAtPeriod = (after) => {
+  if (!after || typeof after !== 'string') return false;
+  const normalized = after.trim();
+  if (/^(por|by|autor(es)?|nome|participantes?)\b/i.test(normalized)) return true;
+  if (/[,;]|\s+e\s+|\s+and\s+/i.test(normalized)) return true;
+  if (/^[A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)+/.test(normalized)) return true;
+  if (normalized.length < 40 && /[A-ZÀ-Ú]/.test(normalized)) return true;
+  return false;
+};
+
+const extractTitleUntilPeriod = (value) => {
+  if (!value || typeof value !== 'string') return value;
+  const cleaned = value.trim();
+  const dotIndex = cleaned.indexOf('.');
+  if (dotIndex <= 0) return cleaned;
+  const before = cleaned.slice(0, dotIndex).trim();
+  const after = cleaned.slice(dotIndex + 1).trim();
+  if (shouldCutAtPeriod(after)) {
+    return before;
+  }
+  return cleaned;
+};
+
+const formatResearchTitle = (value, authorsValue) => {
+  let cleaned = stripPrefix(value);
+  if (!cleaned) return 'Título não informado';
+
+  cleaned = removeAuthorSuffix(cleaned, authorsValue);
+  cleaned = extractTitleUntilPeriod(cleaned);
+
+  const separators = [' | ', ' - ', ' — ', ':'];
+  for (const sep of separators) {
+    if (cleaned.includes(sep)) {
+      const parts = cleaned.split(sep).map((part) => part.trim()).filter(Boolean);
+      if (parts.length >= 2 && isNameString(parts[1])) {
+        return parts[0];
+      }
+      if (parts.length >= 2 && parts[0].length > 10) {
+        return parts[0];
+      }
+    }
+  }
+
+  return cleaned;
+};
+
+const formatAuthorNames = (value) => {
+  const cleaned = stripPrefix(value);
+  if (!cleaned) return 'Autores não registrados';
+
+  const separators = [' | ', ' - ', ' — ', ':'];
+  for (const sep of separators) {
+    if (cleaned.includes(sep)) {
+      const parts = cleaned.split(sep).map((part) => part.trim()).filter(Boolean);
+      const namePart = parts.find(isNameString);
+      if (namePart) return namePart;
+      if (parts.length > 1) return parts[parts.length - 1];
+    }
+  }
+
+  return cleaned;
+};
+
 const Producoes = () => {
   const [listaProducoes, setListaProducoes] = useState([]);
   const [carregandoLista, setCarregandoLista] = useState(true);
@@ -128,7 +221,7 @@ const Producoes = () => {
           <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
           <div>
             <h3 className="h4 mb-0 fw-semibold" style={{ color: '#0f172a' }}>
-              Bibliografias
+              Produções
             </h3>
           </div>
         </div>
@@ -240,18 +333,37 @@ const Producoes = () => {
               return (
                 <article key={itemId} className="producoes-item-card">
                   <div className="d-flex align-items-start justify-content-between gap-3">
-                    <span className="producoes-type-badge">{(item && item.tipo) || 'Outros'}</span>
+                    <div className="d-flex flex-column gap-2">
+                      <span className="producoes-type-badge">{(item && item.tipo) || 'Outros'}</span>
+                      {item && item.subtipo && (
+                        <span style={{ fontSize: '.75rem', color: '#64748b', fontWeight: 500 }}>
+                          {item.subtipo}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <h4 className="producoes-title producoes-title-single-line">
-                    {(item && item.titulo) || 'Título não informado'}
+                    {formatResearchTitle(item?.titulo, item?.autores)}
                   </h4>
 
                   <p className="producoes-meta">
-                    {(item && item.autores) || 'Autores não registrados'}
-                    <span className="producoes-meta-sep">•</span>
-                    {(item && item.ano) || 'Ano N/A'}
+                    {formatAuthorNames(item?.autores)}
                   </p>
+
+                  <p className="producoes-meta">
+                    <span style={{ fontWeight: 600 }}>Ano:</span>
+                    <span className="producoes-meta-sep">•</span>
+                    {(item && item.ano) || 'N/A'}
+                  </p>
+
+                  {item && item.local_publicacao && (
+                    <div className="producoes-meta-details">
+                      <div className="producoes-meta-details-item">
+                        <span className="producoes-meta-details-label">Local:</span> {item.local_publicacao}
+                      </div>
+                    </div>
+                  )}
                 </article>
               );
             })}
