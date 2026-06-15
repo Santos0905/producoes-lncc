@@ -125,7 +125,7 @@ const Producoes = () => {
           <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
           <div>
             <h3 className="h4 mb-0 fw-semibold" style={{ color: '#0f172a' }}>
-              Bibliografias
+              Produções
             </h3>
           </div>
         </div>
