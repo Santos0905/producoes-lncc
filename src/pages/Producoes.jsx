@@ -10,6 +10,7 @@ const Producoes = () => {
   const [erroLista, setErroLista] = useState(null);
 
   const [tipoFiltro, setTipoFiltro] = useState('Todos');
+  const [subtipoFiltro, setSubtipoFiltro] = useState('Todos');
   const [anoFiltro, setAnoFiltro] = useState('');
 
   // paginação real (backend)
@@ -36,9 +37,10 @@ const Producoes = () => {
   const params = useMemo(
     () => ({
       tipo: tipoFiltro === 'Todos' ? null : tipoFiltro,
+      subtipo: subtipoFiltro === 'Todos' ? null : subtipoFiltro,
       ano: anoParam,
     }),
-    [tipoFiltro, anoParam]
+    [tipoFiltro, subtipoFiltro, anoParam]
   );
 
   const fetchPage = useCallback(
@@ -98,12 +100,12 @@ const Producoes = () => {
   // ao trocar filtros, resetar e buscar 1ª página
   useEffect(() => {
     fetchPage({ reset: true });
-  }, [tipoFiltro, anoParam]);
+  }, [tipoFiltro, subtipoFiltro, anoParam]);
 
-  const loadMore = useCallback(() => {
-    if (!hasMore) return;
-    setOffset((prev) => prev + pageSize);
-  }, [hasMore, pageSize]);
+  // const loadMore = useCallback(() => {
+  //   if (!hasMore) return;
+  //   setOffset((prev) => prev + pageSize);
+  // }, [hasMore, pageSize]);
 
   useEffect(() => {
     if (offset === 0) return;
@@ -148,8 +150,8 @@ const Producoes = () => {
           />
         </div>
 
-        {/* 2) Campo Tipo + Projetos com Aporte */}
-        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ paddingBottom: 2 }}>
+        {/* 2) Campo Tipo */}
+        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ paddingBottom: 8 }}>
           <label htmlFor="tipoFiltro" style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}>
             Tipo
           </label>
@@ -164,6 +166,28 @@ const Producoes = () => {
             <option value="Técnica/Inovação">Técnica/Inovação</option>
             <option value="Financiamento">Projetos com Aporte</option>
             <option value="Todos">Todos</option>
+          </select>
+        </div>
+
+        {/* 3) Campo Subtipo */}
+        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ paddingBottom: 2 }}>
+          <label htmlFor="subtipoFiltro" style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}>
+            Subtipo
+          </label>
+          <select
+            id="subtipoFiltro"
+            className="form-select form-select-sm"
+            style={{ maxWidth: 240 }}
+            value={subtipoFiltro}
+            onChange={(e) => setSubtipoFiltro(e.target.value)}
+          >
+            <option value="Todos">Todos</option>
+            <option value="Artigo">Artigo</option>
+            <option value="Livro">Livro</option>
+            <option value="Capítulo de livro">Capítulo de livro</option>
+            <option value="Software">Software</option>
+            <option value="Patente">Patente</option>
+            <option value="N/P">N/P</option>
           </select>
         </div>
 
@@ -220,8 +244,11 @@ const Producoes = () => {
 
               return (
                 <article key={itemId} className="producoes-item-card">
-                  <div className="d-flex align-items-start justify-content-between gap-3">
+                  <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
                     <span className="producoes-type-badge">{(item && item.tipo) || 'Outros'}</span>
+                    <span className="producoes-type-badge" style={{ background: 'rgba(100,116,139,.12)', color: '#334155' }}>
+                      {(item && item.subtipo) || 'Financiamento'}
+                    </span>
                   </div>
 
                   <h4 className="producoes-title producoes-title-single-line">
@@ -229,7 +256,7 @@ const Producoes = () => {
                   </h4>
 
                   <p className="producoes-meta">
-                    {(item && item.autores) || 'Autores não registrados'}
+                  
                     <span className="producoes-meta-sep">•</span>
                     {(item && item.ano) || 'Ano N/A'}
                   </p>

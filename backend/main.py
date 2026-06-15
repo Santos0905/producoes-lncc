@@ -78,7 +78,37 @@ def build_query(tipo_normalizado, ano_filtro=None, limit=None, offset=None):
         if ano_filtro:
             where += " AND p.year = :ano_filtro"
         
-        select_base = f"SELECT p.id, p.description, p.description, p.year, '{display_type}' FROM {table} p {where}"
+        if tipo_normalizado == "bibliográfica":
+            select_base = f"""
+                SELECT 
+                    p.id,
+                    p.description,
+                    p.description,
+                    p.year,
+                    '{display_type}' AS tipo,
+                    bpt.name AS subtipo
+                FROM {table} p
+                LEFT JOIN bibliographic_production_type bpt
+                    ON p.bibliogragraphic_type_id = bpt.id
+                {where}
+            """ 
+        elif tipo_normalizado == "técnica/inovação":
+            select_base = f"""
+                SELECT 
+                    p.id,
+                    p.description,
+                    p.description,
+                    p.year,
+                    '{display_type}' AS tipo,
+                    tipt.name AS subtipo
+                FROM {table} p
+                LEFT JOIN technical_innovation_production_type tipt
+                    ON p.technical_innovation_type_id = tipt.id
+                {where}
+            """
+        else:
+            # financiamento: subtipo fixo como N/P
+            select_base = f"SELECT p.id, p.description, p.description, p.year, '{display_type}' AS tipo, 'N/P' AS subtipo FROM {table} p {where}"
         
         data_query = select_base + " ORDER BY p.year DESC"
         if limit:
@@ -87,13 +117,55 @@ def build_query(tipo_normalizado, ano_filtro=None, limit=None, offset=None):
         count_query = f"SELECT COUNT(*) FROM {table} p {where}"
         return (data_query, count_query, params)
     
-    # Todos os tipos:
+    # Todos os tipos - CORRIGIDO COM SUBTIPOS
+    where_base = "WHERE p.public = 1"
+    if ano_filtro:
+        where_base += " AND p.year = :ano_filtro"
+    
     selects = []
-    for key, (table, display_type) in TIPO_TABELA.items():
-        where = "WHERE p.public = 1"
-        if ano_filtro:
-            where += " AND p.year = :ano_filtro"
-        selects.append(f"SELECT p.id, p.description, p.description, p.year, '{display_type}' FROM {table} p {where}")
+    
+    # Bibliográfica
+    selects.append(f"""
+        SELECT 
+            p.id,
+            p.description,
+            p.description,
+            p.year,
+            'Bibliográfica' AS tipo,
+            bpt.name AS subtipo
+        FROM project_bibliographic_production p
+        LEFT JOIN bibliographic_production_type bpt
+            ON p.bibliogragraphic_type_id = bpt.id
+        {where_base}
+    """)
+    
+    # Técnica/Inovação
+    selects.append(f"""
+        SELECT 
+            p.id,
+            p.description,
+            p.description,
+            p.year,
+            'Técnica/Inovação' AS tipo,
+            tipt.name AS subtipo
+        FROM project_technical_innovation p
+        LEFT JOIN technical_innovation_production_type tipt
+            ON p.technical_innovation_type_id = tipt.id
+        {where_base}
+    """)
+    
+    # Financiamento
+    selects.append(f"""
+        SELECT 
+            p.id,
+            p.description,
+            p.description,
+            p.year,
+            'Projetos com Aporte' AS tipo,
+            'N/P' AS subtipo
+        FROM project_funding p
+        {where_base}
+    """)
     
     union_query = " UNION ALL ".join(selects)
     data_query = f"({union_query}) ORDER BY year DESC"
@@ -120,7 +192,7 @@ def listar_producoes(db: Session = Depends(get_mysql_db), tipo: str | None = Non
         data_query, _, params = build_query(tipo_norm, ano_filtro)
         result = db.execute(text(data_query), params).fetchall()
         
-        return [{"id": r[0], "titulo": r[1], "autores": r[2], "ano": r[3], "tipo": r[4]} for r in result]
+        return [{"id": r[0], "titulo": r[1], "ano": r[3], "tipo": r[4], "subtipo": r[5]} for r in result]
     except Exception as e:
         print(f"[ERROR] {e}")
         return []
@@ -129,6 +201,7 @@ def listar_producoes(db: Session = Depends(get_mysql_db), tipo: str | None = Non
 def pagina_producoes(
     db: Session = Depends(get_mysql_db),
     tipo: str | None = None,
+    subtipo: str | None = None,
     ano: int | None = None,
     limit: int = 10,
     offset: int = 0,
@@ -141,11 +214,17 @@ def pagina_producoes(
         
         data_query, count_query, params = build_query(tipo_norm, ano_filtro, limit, offset)
         
+        # Adiciona filtro de subtipo se fornecido
+        if subtipo and subtipo != 'Todos':
+            # Filtra por subtipo na subquery
+            data_query = f"({data_query}) WHERE subtipo = :subtipo_filtro ORDER BY year DESC"
+            params['subtipo_filtro'] = subtipo
+        
         result = db.execute(text(data_query), params).fetchall()
         total_row = db.execute(text(count_query), params).fetchone()
         total = total_row[0] if total_row else 0
         
-        items = [{"id": r[0], "titulo": r[1], "autores": r[2], "ano": r[3], "tipo": r[4]} for r in result]
+        items = [{"id": r[0], "titulo": r[1], "ano": r[3], "tipo": r[4], "subtipo": r[5]} for r in result]
         return {"items": items, "total": int(total)}
     except Exception as e:
         print(f"[ERROR] {e}")
@@ -177,4 +256,3 @@ def health_check(db: Session = Depends(get_mysql_db)):
         return {"status": "healthy", "mysql": "connected", "result": result}
     except Exception as e:
         return {"status": "unhealthy", "mysql": "disconnected", "error": str(e)}
-

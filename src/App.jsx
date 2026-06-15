@@ -2,7 +2,7 @@ import Producoes from "./pages/Producoes";
 
 function App() {
   return (
-    <div className="min-vh-100" style={{ backgroundColor: "#ADD8E6" }}>
+    <div className="min-vh-100" style={{ backgroundColor: "#F4F3F0" }}>
       <header className="sticky-top shadow-sm" style={{ backgroundColor: "#F5F7FF" }}>
         <div className="container-xl py-4 flex-column flex-lg-row d-flex align-items-lg-center justify-content-lg-between gap-3">
           <div>
