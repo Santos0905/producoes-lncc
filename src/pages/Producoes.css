@@ -1,7 +1,7 @@
 .producoes-list-card{
-  background:#fff;
+  background:#ffffff;
   border:1px solid rgba(15,23,42,.08);
-  border-radius:1rem;
+  border-radius: 0.5rem;
   box-shadow:0 8px 24px rgba(0,0,0,.04);
   overflow:hidden;
 }
@@ -14,14 +14,14 @@
   padding:1.25rem 1.5rem;
   transition:transform .18s ease, box-shadow .18s ease, background-color .18s ease;
   border-bottom:1px solid rgba(15,23,42,.06);
-  background:linear-gradient(180deg, rgba(248,250,252,.55), rgba(255,255,255,1));
+  background:linear-gradient(180deg, rgba(248,250,252,.55), rgb(255, 255, 255));
 }
 
 .producoes-item-card:last-child{border-bottom:none;}
 
 .producoes-item-card:hover{
   transform:translateY(-3px);
-  background:linear-gradient(180deg, rgba(234,245,255,.7), rgba(255,255,255,1));
+  background:linear-gradient(180deg, rgba(234,245,255,.7), rgb(255, 255, 255));
   box-shadow:0 14px 30px rgba(0,0,0,.06);
 }
 
@@ -48,10 +48,13 @@
 
 .producoes-title-single-line{
   display:-webkit-box;
-  -webkit-line-clamp:4;
+  -webkit-line-clamp: 4;
   -webkit-box-orient:vertical;
   overflow:hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
+
 
 .producoes-meta{
   margin:0;
@@ -75,4 +78,18 @@
   padding:2rem 1.25rem;
   text-align:center;
 }
+
+/* Utilidades usadas em Producoes.jsx (eram classes sem CSS dedicado) */
+.producoes-filtros {
+  margin-top: 0.25rem;
+}
+
+.producoes-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 

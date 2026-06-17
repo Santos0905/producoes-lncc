@@ -1,9 +1,7 @@
-/* DashboardCards Hover Effects */
-
 .card-hover-effect {
   min-height: 100px;
-  border-radius: 1.25rem;
-  background-color: #f8f9fa;
+  border-radius: 0.5rem;
+  background-color: rgb(255, 255, 255);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;

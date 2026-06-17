@@ -13,6 +13,9 @@ const Producoes = () => {
   const [subtipoFiltro, setSubtipoFiltro] = useState('Todos');
   const [anoFiltro, setAnoFiltro] = useState('');
 
+  const [subtiposDisponveis, setSubtiposDisponveis] = useState([]);
+  const [carregandoSubtipos, setCarregandoSubtipos] = useState(false);
+
   // paginação real (backend)
   const [pageSize] = useState(10);
 
@@ -24,7 +27,6 @@ const Producoes = () => {
 
   const totalItems = Array.isArray(listaProducoes) ? listaProducoes.length : 0;
   const hasMore = totalItems < total;
-
 
   const debouncedAno = useDebouncedValue(anoFiltro, 250);
 
@@ -43,6 +45,34 @@ const Producoes = () => {
     [tipoFiltro, subtipoFiltro, anoParam]
   );
 
+  // Buscar subtipos disponíveis quando o tipo muda
+  useEffect(() => {
+    const buscarSubtipos = async () => {
+      setCarregandoSubtipos(true);
+      try {
+        const res = await api.get('/api/producoes/subtipos', {
+          params: {
+            tipo: tipoFiltro === 'Todos' ? null : tipoFiltro,
+          },
+        });
+        console.log('Subtipos recebidos:', res.data?.subtipos);
+        setSubtiposDisponveis(res.data?.subtipos || []);
+        
+        // Manter o subtipo selecionado se ainda estiver disponível, senão volta para Todos
+        if (subtipoFiltro !== 'Todos' && !res.data?.subtipos?.includes(subtipoFiltro)) {
+          setSubtipoFiltro('Todos');
+        }
+      } catch (err) {
+        console.error('Erro ao buscar subtipos:', err);
+        setSubtiposDisponveis([]);
+      } finally {
+        setCarregandoSubtipos(false);
+      }
+    };
+
+    buscarSubtipos();
+  }, [tipoFiltro]);
+
   const fetchPage = useCallback(
     async ({ reset = false } = {}) => {
       if (carregandoPaginaRef.current) return;
@@ -59,6 +89,7 @@ const Producoes = () => {
       carregandoPaginaRef.current = true;
 
       try {
+        console.log('Enviando params:', params);
         const res = await api.get('/api/producoes/pagina', {
           params: {
             ...params,
@@ -102,11 +133,6 @@ const Producoes = () => {
     fetchPage({ reset: true });
   }, [tipoFiltro, subtipoFiltro, anoParam]);
 
-  // const loadMore = useCallback(() => {
-  //   if (!hasMore) return;
-  //   setOffset((prev) => prev + pageSize);
-  // }, [hasMore, pageSize]);
-
   useEffect(() => {
     if (offset === 0) return;
     fetchPage({ reset: false });
@@ -115,24 +141,18 @@ const Producoes = () => {
   // Paginação é controlada muda pelos botões
   const producoesVisiveis = listaProducoes;
 
-
-
-
   return (
     <div className="py-4">
       <DashboardCards />
 
-
       <div className="mx-4 producoes-filtros">
-          <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+        <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
           <div>
             <h3 className="h4 mb-0 fw-semibold" style={{ color: '#0f172a' }}>
               Produções
             </h3>
           </div>
         </div>
-
-        {/* Abaixo de Bibliografias */}
 
         {/* 1) Campo Ano */}
         <div className="d-flex align-items-center gap-2 flex-wrap" style={{ paddingTop: 6, paddingBottom: 8 }}>
@@ -162,8 +182,8 @@ const Producoes = () => {
             value={tipoFiltro}
             onChange={(e) => setTipoFiltro(e.target.value)}
           >
-            <option value="Bibliográfica">Bibliográfica</option>
-            <option value="Técnica/Inovação">Técnica/Inovação</option>
+            <option value="Bibliografica">Bibliografica</option>
+            <option value="Tecnica/Inovacao">Tecnica/Inovacao</option>
             <option value="Financiamento">Projetos com Aporte</option>
             <option value="Todos">Todos</option>
           </select>
@@ -172,7 +192,7 @@ const Producoes = () => {
         {/* 3) Campo Subtipo */}
         <div className="d-flex align-items-center gap-2 flex-wrap" style={{ paddingBottom: 2 }}>
           <label htmlFor="subtipoFiltro" style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}>
-            Subtipo
+            Subtipo {carregandoSubtipos && <small>(carregando...)</small>}
           </label>
           <select
             id="subtipoFiltro"
@@ -180,23 +200,24 @@ const Producoes = () => {
             style={{ maxWidth: 240 }}
             value={subtipoFiltro}
             onChange={(e) => setSubtipoFiltro(e.target.value)}
+            disabled={carregandoSubtipos || subtiposDisponveis.length === 0}
           >
-            <option value="Todos">Todos</option>
-            <option value="Artigo">Artigo</option>
-            <option value="Livro">Livro</option>
-            <option value="Capítulo de livro">Capítulo de livro</option>
-            <option value="Software">Software</option>
-            <option value="Patente">Patente</option>
-            <option value="N/P">N/P</option>
+            <option value="Todos">Todos ({subtiposDisponveis.length})</option>
+            {subtiposDisponveis && subtiposDisponveis.length > 0 ? (
+              subtiposDisponveis.map((subtipo) => (
+                <option key={subtipo} value={subtipo}>
+                  {subtipo}
+                </option>
+              ))
+            ) : (
+              <option disabled>Carregando subtipos...</option>
+            )}
           </select>
         </div>
-
-
       </div>
 
       <div className="mx-4 producoes-list-card" style={{ position: 'relative' }}>
         {(carregandoLista || carregandoPagina) && (
-
           <div className="producoes-loading">
             <div
               className="spinner-border"
@@ -215,7 +236,6 @@ const Producoes = () => {
         )}
 
         {erroLista && !carregandoLista && !carregandoPagina && (
-
           <div className="p-4" style={{ background: '#fef2f2', borderLeft: '4px solid #ef4444' }}>
             <p className="mb-0" style={{ color: '#b91c1c', fontWeight: 700 }}>
               ⚠️ {erroLista}
@@ -224,7 +244,6 @@ const Producoes = () => {
         )}
 
         {!carregandoLista && !carregandoPagina && !erroLista && listaProducoes.length === 0 && (
-
           <div className="producoes-empty">
             <p className="mb-1" style={{ color: '#64748b', fontWeight: 600 }}>
               Nenhuma produção encontrada
@@ -236,9 +255,7 @@ const Producoes = () => {
         )}
 
         {!carregandoLista && !carregandoPagina && Array.isArray(listaProducoes) && listaProducoes.length > 0 && (
-
           <div className="producoes-list-header-divider">
-
             {producoesVisiveis.map((item, index) => {
               const itemId = item && item.id ? item.id : `producao-${index}`;
 
@@ -256,7 +273,6 @@ const Producoes = () => {
                   </h4>
 
                   <p className="producoes-meta">
-                  
                     <span className="producoes-meta-sep">•</span>
                     {(item && item.ano) || 'Ano N/A'}
                   </p>
@@ -264,9 +280,7 @@ const Producoes = () => {
               );
             })}
 
-          
             {total > pageSize && (
-
               <div className="producoes-pagination" style={{ padding: '0 1.5rem 1.25rem' }}>
                 <button
                   type="button"
@@ -293,14 +307,11 @@ const Producoes = () => {
                 </button>
               </div>
             )}
-
           </div>
         )}
       </div>
-
     </div>
   );
 };
-
 
 export default Producoes;
