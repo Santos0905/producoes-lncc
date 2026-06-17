@@ -96,7 +96,7 @@ def pagina_producoes(
                         p.description,
                         p.year,
                         '{display_type}' AS tipo,
-                        COALESCE(bpt.name, 'N/A') AS subtipo
+                        COALESCE(bpt.name, 'Sem subtipo') AS subtipo
                     FROM {table} p
                     LEFT JOIN bibliographic_production_type bpt
                         ON p.bibliogragraphic_type_id = bpt.id
@@ -117,7 +117,7 @@ def pagina_producoes(
                         p.description,
                         p.year,
                         '{display_type}' AS tipo,
-                        COALESCE(tipt.name, 'N/A') AS subtipo
+                        COALESCE(tipt.name, 'Sem subtipo') AS subtipo
                     FROM {table} p
                     LEFT JOIN technical_innovation_production_type tipt
                         ON p.technical_innovation_type_id = tipt.id
@@ -130,11 +130,26 @@ def pagina_producoes(
                 if subtipo_filtro:
                     count_query += " AND tipt.name = :subtipo_filtro"
             else:
-                data_query = f"SELECT p.id, p.description, p.description, p.year, '{display_type}' AS tipo, 'N/P' AS subtipo FROM {table} p {where}"
-                count_query = f"SELECT COUNT(*) FROM {table} p {where}"
-                if subtipo_filtro and subtipo_filtro != "N/P":
-                    data_query = f"SELECT p.id, p.description, p.description, p.year, '{display_type}' AS tipo, 'N/P' AS subtipo FROM {table} p WHERE 1=0"
-                    count_query = "SELECT 0"
+                # Financiamento
+                data_query = f"""
+                    SELECT 
+                        p.id,
+                        p.description,
+                        p.description,
+                        p.year,
+                        '{display_type}' AS tipo,
+                        COALESCE(ft.name, 'Sem subtipo') AS subtipo
+                    FROM {table} p
+                    LEFT JOIN funding_type ft
+                        ON p.funding_type_id = ft.id
+                    {where}
+                """
+                if subtipo_filtro:
+                    data_query += " AND ft.name = :subtipo_filtro"
+                
+                count_query = f"SELECT COUNT(*) FROM {table} p LEFT JOIN funding_type ft ON p.funding_type_id = ft.id {where}"
+                if subtipo_filtro:
+                    count_query += " AND ft.name = :subtipo_filtro"
             
             data_query += f" ORDER BY p.year DESC LIMIT :limit OFFSET :offset"
             
@@ -142,7 +157,7 @@ def pagina_producoes(
             total_row = db.execute(text(count_query), params).fetchone()
             total = total_row[0] if total_row else 0
             
-            items = [{"id": r[0], "titulo": r[1], "ano": r[3], "tipo": r[4], "subtipo": r[5]} for r in result]
+            items = [{"id": r[0], "titulo": r[1], "autores": r[2], "ano": r[3], "tipo": r[4], "subtipo": r[5]} for r in result]
             return {"items": items, "total": int(total)}
         
         where_base = "WHERE p.public = 1"
@@ -158,8 +173,8 @@ def pagina_producoes(
             tech_where += " AND tipt.name = :subtipo_filtro"
         
         fund_where = where_base
-        if subtipo_filtro and subtipo_filtro != "N/P":
-            fund_where = "WHERE 1=0"
+        if subtipo_filtro:
+            fund_where += " AND ft.name = :subtipo_filtro"
         
         selects = [
             f"""
@@ -169,7 +184,7 @@ def pagina_producoes(
                 p.description,
                 p.year,
                 'Bibliografica' AS tipo,
-                COALESCE(bpt.name, 'N/A') AS subtipo
+                COALESCE(bpt.name, 'Sem subtipo') AS subtipo
             FROM project_bibliographic_production p
             LEFT JOIN bibliographic_production_type bpt
                 ON p.bibliogragraphic_type_id = bpt.id
@@ -182,7 +197,7 @@ def pagina_producoes(
                 p.description,
                 p.year,
                 'Tecnica/Inovacao' AS tipo,
-                COALESCE(tipt.name, 'N/A') AS subtipo
+                COALESCE(tipt.name, 'Sem subtipo') AS subtipo
             FROM project_technical_innovation p
             LEFT JOIN technical_innovation_production_type tipt
                 ON p.technical_innovation_type_id = tipt.id
@@ -195,8 +210,10 @@ def pagina_producoes(
                 p.description,
                 p.year,
                 'Projetos com Aporte' AS tipo,
-                'N/P' AS subtipo
+                COALESCE(ft.name, 'Sem subtipo') AS subtipo
             FROM project_funding p
+            LEFT JOIN funding_type ft
+                ON p.funding_type_id = ft.id
             {fund_where}
             """
         ]
@@ -208,18 +225,14 @@ def pagina_producoes(
         
         count_bib = "SELECT COUNT(*) FROM project_bibliographic_production p LEFT JOIN bibliographic_production_type bpt ON p.bibliogragraphic_type_id = bpt.id " + bib_where
         count_tech = "SELECT COUNT(*) FROM project_technical_innovation p LEFT JOIN technical_innovation_production_type tipt ON p.technical_innovation_type_id = tipt.id " + tech_where
-        
-        if subtipo_filtro and subtipo_filtro != "N/P":
-            count_fund = "SELECT 0"
-        else:
-            count_fund = "SELECT COUNT(*) FROM project_funding p " + fund_where
+        count_fund = "SELECT COUNT(*) FROM project_funding p LEFT JOIN funding_type ft ON p.funding_type_id = ft.id " + fund_where
         
         count_query = f"SELECT ({count_bib}) + ({count_tech}) + ({count_fund})"
         
         total_row = db.execute(text(count_query), params).fetchone()
         total = total_row[0] if total_row else 0
         
-        items = [{"id": r[0], "titulo": r[1], "ano": r[3], "tipo": r[4], "subtipo": r[5]} for r in result]
+        items = [{"id": r[0], "titulo": r[1], "autores": r[2], "ano": r[3], "tipo": r[4], "subtipo": r[5]} for r in result]
         return {"items": items, "total": int(total)}
     except Exception as e:
         print(f"[ERROR] {e}")
@@ -275,30 +288,59 @@ def totais_producoes(db: Session = Depends(get_mysql_db)):
 def obter_subtipos(db: Session = Depends(get_mysql_db), tipo: str | None = None):
     try:
         tipo_norm = normalizar_tipo(tipo)
-        subtipos = set()
+        subtipos = []
         
-        if tipo_norm == "bibliografica" or tipo_norm == "todos":
+        if tipo_norm == "bibliografica":
             result = db.execute(text("""
                 SELECT DISTINCT name FROM bibliographic_production_type
                 WHERE name IS NOT NULL
                 ORDER BY name
             """)).fetchall()
-            subtipos.update([r[0] for r in result])
+            subtipos = [r[0] for r in result]
         
-        if tipo_norm == "tecnica/inovacao" or tipo_norm == "todos":
+        elif tipo_norm == "tecnica/inovacao":
             result = db.execute(text("""
                 SELECT DISTINCT name FROM technical_innovation_production_type
                 WHERE name IS NOT NULL
                 ORDER BY name
             """)).fetchall()
-            subtipos.update([r[0] for r in result])
+            subtipos = [r[0] for r in result]
         
-        if tipo_norm == "financiamento" or tipo_norm == "todos":
-            subtipos.add("N/P")
+        elif tipo_norm == "financiamento":
+            result = db.execute(text("""
+                SELECT DISTINCT name FROM funding_type
+                WHERE name IS NOT NULL
+                ORDER BY name
+            """)).fetchall()
+            subtipos = [r[0] for r in result]
         
-        return {"subtipos": sorted(list(subtipos))}
+        elif tipo_norm == "todos":
+            # Retorna todos os subtipos de todos os tipos
+            bib_result = db.execute(text("""
+                SELECT DISTINCT name FROM bibliographic_production_type
+                WHERE name IS NOT NULL
+            """)).fetchall()
+            subtipos.extend([r[0] for r in bib_result])
+            
+            tech_result = db.execute(text("""
+                SELECT DISTINCT name FROM technical_innovation_production_type
+                WHERE name IS NOT NULL
+            """)).fetchall()
+            subtipos.extend([r[0] for r in tech_result])
+            
+            fund_result = db.execute(text("""
+                SELECT DISTINCT name FROM funding_type
+                WHERE name IS NOT NULL
+            """)).fetchall()
+            subtipos.extend([r[0] for r in fund_result])
+            
+            subtipos = sorted(list(set(subtipos)))
+        
+        return {"subtipos": subtipos}
     except Exception as e:
         print(f"[ERROR] {e}")
+        import traceback
+        traceback.print_exc()
         return {"subtipos": []}
 
 @app.get("/api/health")

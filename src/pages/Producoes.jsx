@@ -16,12 +16,9 @@ const Producoes = () => {
   const [subtiposDisponveis, setSubtiposDisponveis] = useState([]);
   const [carregandoSubtipos, setCarregandoSubtipos] = useState(false);
 
-  // paginação real (backend)
   const [pageSize] = useState(10);
-
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
-
   const [carregandoPagina, setCarregandoPagina] = useState(false);
   const carregandoPaginaRef = useRef(false);
 
@@ -58,7 +55,6 @@ const Producoes = () => {
         console.log('Subtipos recebidos:', res.data?.subtipos);
         setSubtiposDisponveis(res.data?.subtipos || []);
         
-        // Manter o subtipo selecionado se ainda estiver disponível, senão volta para Todos
         if (subtipoFiltro !== 'Todos' && !res.data?.subtipos?.includes(subtipoFiltro)) {
           setSubtipoFiltro('Todos');
         }
@@ -128,7 +124,6 @@ const Producoes = () => {
     [params, pageSize, offset]
   );
 
-  // ao trocar filtros, resetar e buscar 1ª página
   useEffect(() => {
     fetchPage({ reset: true });
   }, [tipoFiltro, subtipoFiltro, anoParam]);
@@ -138,8 +133,24 @@ const Producoes = () => {
     fetchPage({ reset: false });
   }, [offset, fetchPage]);
 
-  // Paginação é controlada muda pelos botões
   const producoesVisiveis = listaProducoes;
+
+  const getTipoBadgeColor = (tipo) => {
+    switch (tipo) {
+      case 'Bibliografica':
+        return { bg: '#e0e7ff', text: '#3730a3' };
+      case 'Tecnica/Inovacao':
+        return { bg: '#fce7f3', text: '#9f1239' };
+      case 'Projetos com Aporte':
+        return { bg: '#dcfce7', text: '#166534' };
+      default:
+        return { bg: '#f3f4f6', text: '#6b7280' };
+    }
+  };
+
+  const getSubtipoBadgeColor = () => {
+    return { bg: '#dbeafe', text: '#0369a1' };
+  };
 
   return (
     <div className="py-4">
@@ -178,14 +189,14 @@ const Producoes = () => {
           <select
             id="tipoFiltro"
             className="form-select form-select-sm"
-            style={{ maxWidth: 240 }}
+            style={{ maxWidth: 280 }}
             value={tipoFiltro}
             onChange={(e) => setTipoFiltro(e.target.value)}
           >
+            <option value="Todos">Todos</option>
             <option value="Bibliografica">Bibliografica</option>
             <option value="Tecnica/Inovacao">Tecnica/Inovacao</option>
-            <option value="Financiamento">Projetos com Aporte</option>
-            <option value="Todos">Todos</option>
+            <option value="financiamento">Projetos com Aporte</option>
           </select>
         </div>
 
@@ -197,7 +208,7 @@ const Producoes = () => {
           <select
             id="subtipoFiltro"
             className="form-select form-select-sm"
-            style={{ maxWidth: 240 }}
+            style={{ maxWidth: 380 }}
             value={subtipoFiltro}
             onChange={(e) => setSubtipoFiltro(e.target.value)}
             disabled={carregandoSubtipos || subtiposDisponveis.length === 0}
@@ -227,7 +238,7 @@ const Producoes = () => {
               <span className="visually-hidden">Carregando...</span>
             </div>
             <p className="mt-2 mb-0" style={{ color: '#64748b', fontWeight: 600 }}>
-              Carregando bibliografias...
+              Carregando produções...
             </p>
             <p className="mb-0" style={{ color: '#94a3b8', fontSize: '.875rem' }}>
               Por favor, aguarde enquanto buscamos os dados
@@ -249,7 +260,7 @@ const Producoes = () => {
               Nenhuma produção encontrada
             </p>
             <p className="mb-0" style={{ color: '#94a3b8', fontSize: '.875rem' }}>
-              Verifique se existem dados no banco de dados
+              Verifique se existem dados no banco de dados com os filtros selecionados
             </p>
           </div>
         )}
@@ -258,21 +269,54 @@ const Producoes = () => {
           <div className="producoes-list-header-divider">
             {producoesVisiveis.map((item, index) => {
               const itemId = item && item.id ? item.id : `producao-${index}`;
+              const tipoBadgeColor = getTipoBadgeColor(item?.tipo);
+              const subtipoBadgeColor = getSubtipoBadgeColor();
 
               return (
                 <article key={itemId} className="producoes-item-card">
-                  <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
-                    <span className="producoes-type-badge">{(item && item.tipo) || 'Outros'}</span>
-                    <span className="producoes-type-badge" style={{ background: 'rgba(100,116,139,.12)', color: '#334155' }}>
-                      {(item && item.subtipo) || 'Financiamento'}
+                  {/* Badges: Tipo + Subtipo */}
+                  <div className="d-flex align-items-start justify-content-start gap-2 flex-wrap mb-3">
+                    {/* Badge Tipo */}
+                    <span 
+                      className="badge fw-semibold" 
+                      style={{
+                        backgroundColor: tipoBadgeColor.bg,
+                        color: tipoBadgeColor.text,
+                        fontSize: '0.75rem',
+                        padding: '0.35rem 0.65rem',
+                        borderRadius: '0.25rem'
+                      }}
+                      title={item?.tipo}
+                    >
+                      {(item && item.tipo) || 'Tipo'}
                     </span>
+                    
+                    {/* Badge Subtipo */}
+                    {item?.subtipo && (
+                      <span 
+                        className="badge fw-semibold" 
+                        style={{
+                          backgroundColor: subtipoBadgeColor.bg,
+                          color: subtipoBadgeColor.text,
+                          fontSize: '0.75rem',
+                          padding: '0.35rem 0.65rem',
+                          borderRadius: '0.25rem'
+                        }}
+                        title={item?.subtipo}
+                      >
+                        {item.subtipo}
+                      </span>
+                    )}
                   </div>
 
+                  {/* Título */}
                   <h4 className="producoes-title producoes-title-single-line">
                     {(item && item.titulo) || 'Título não informado'}
                   </h4>
 
+                  {/* Meta: Autores + Ano */}
                   <p className="producoes-meta">
+                   
                     <span className="producoes-meta-sep">•</span>
                     {(item && item.ano) || 'Ano N/A'}
                   </p>
