@@ -138,7 +138,7 @@ def pagina_producoes(
                         p.description,
                         p.year,
                         '{display_type}' AS tipo,
-                        COALESCE(ft.name, 'Sem subtipo') AS subtipo
+                        COALESCE(ft.name, '') AS subtipo
                     FROM {table} p
                     LEFT JOIN funding_type ft
                         ON p.funding_type_id = ft.id
@@ -210,7 +210,7 @@ def pagina_producoes(
                 p.description,
                 p.year,
                 'Projetos com Aporte' AS tipo,
-                COALESCE(ft.name, 'Sem subtipo') AS subtipo
+                COALESCE(ft.name, '') AS subtipo
             FROM project_funding p
             LEFT JOIN funding_type ft
                 ON p.funding_type_id = ft.id
