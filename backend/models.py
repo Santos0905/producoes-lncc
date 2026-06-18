@@ -5,23 +5,15 @@ Base = declarative_base()
 
 class Producao(Base):
     __tablename__ = "producoes"
-
-    id = Column(Integer, primary_key=True, index=True)
-    titulo = Column(String)
-    autores = Column(String)
-    ano = Column(Integer)
-    tipo = Column(String) 
-
+    id, titulo, autores, ano, tipo = Column(Integer, primary_key=True, index=True), Column(String), Column(String), Column(Integer), Column(String)
 
 class ProjectBibliographicProduction(Base):
     __tablename__ = "project_bibliographic_production"
     id = Column(Integer, primary_key=True, index=True)
 
-
 class ProjectTechnicalInnovation(Base):
     __tablename__ = "project_technical_innovation"
     id = Column(Integer, primary_key=True, index=True)
-
 
 class ProjectFunding(Base):
     __tablename__ = "project_funding"
