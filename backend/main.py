@@ -26,6 +26,7 @@ def get_mysql_db():
     try: yield db
     finally: db.close()
 
+# Mantendo mapeamento exato das tabelas e joins originais
 TIPO_TABELA = {
     "bibliografica": ("project_bibliographic_production", "Bibliografica", "bibliogragraphic_type_id", "bibliographic_production_type"),
     "tecnica/inovacao": ("project_technical_innovation", "Tecnica/Inovacao", "technical_innovation_type_id", "technical_innovation_production_type"),
@@ -43,6 +44,7 @@ def montar_query_bloco(table, display_type, fk, join_table, where, subtipo_filtr
     sub_where = f" AND j.name = :subtipo_filtro" if subtipo_filtro else ""
     coalesce_val = "''" if display_type == "Projetos com Aporte" else "'Sem subtipo'"
     
+    # Mantendo estritamente p.description duplicado como titulo e autores conforme o seu original
     data = f"SELECT p.id, p.description, p.description, p.year, '{display_type}' AS tipo, COALESCE(j.name, {coalesce_val}) AS subtipo FROM {table} p LEFT JOIN {join_table} j ON p.{fk} = j.id {where} {sub_where}"
     count = f"SELECT COUNT(*) FROM {table} p LEFT JOIN {join_table} j ON p.{fk} = j.id {where} {sub_where}"
     return data, count
@@ -52,7 +54,6 @@ def pagina_producoes(db: Session = Depends(get_mysql_db), tipo: str | None = Non
     try:
         tipo_norm, subtipo_filtro = normalizar_tipo(tipo), (subtipo if subtipo and subtipo != "Todos" else None)
         
-        # Correção aqui: params inicializado de forma segura com dicionário dinâmico
         params = {
             "limit": max(1, min(limit, 100)), 
             "offset": max(0, offset),
@@ -71,6 +72,7 @@ def pagina_producoes(db: Session = Depends(get_mysql_db), tipo: str | None = Non
                 d_q, c_q = montar_query_bloco(*v, where, subtipo_filtro)
                 selects.append(d_q)
                 counts.append(f"({c_q})")
+            # UNION ALL garantindo a paginação correta no modo "Todos"
             data_q = f"({' UNION ALL '.join(selects)}) ORDER BY year DESC LIMIT :limit OFFSET :offset"
             count_q = f"SELECT {' + '.join(counts)}"
 
