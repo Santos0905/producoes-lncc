@@ -325,7 +325,7 @@ const Producoes = () => {
             })}
 
             {total > pageSize && (
-              <div className="producoes-pagination" style={{ padding: '0 1.5rem 1.25rem' }}>
+                <div className="producoes-pagination" style={{ padding: '0 1.5rem 1.25rem', marginTop: '1.2rem' }}>
                 <button
                   type="button"
                   className="btn btn-sm"
