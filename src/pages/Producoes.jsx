@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DashboardCards from '../components/DashboardCards';
+import ProductionYearChart from '../components/ProductionYearChart';
 import api from '../services/api';
 import './Producoes.css';
 import useDebouncedValue from '../hooks/useDebouncedValue';
@@ -139,7 +140,7 @@ const Producoes = () => {
     switch (tipo) {
       case 'Bibliografica':
         return { bg: '#e0e7ff', text: '#3730a3' };
-      case 'Tecnica/Inovacao':
+      case 'Tecnica/Inovação':
         return { bg: '#fce7f3', text: '#9f1239' };
       case 'Projetos com Aporte':
         return { bg: '#dcfce7', text: '#166534' };
@@ -155,6 +156,8 @@ const Producoes = () => {
   return (
     <div className="py-4">
       <DashboardCards />
+
+      <ProductionYearChart tipo={tipoFiltro} subtipo={subtipoFiltro} ano={anoFiltro} />
 
       <div className="mx-4 producoes-filtros">
         <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
@@ -195,7 +198,7 @@ const Producoes = () => {
           >
             <option value="Todos">Todos</option>
             <option value="Bibliografica">Bibliografica</option>
-            <option value="Tecnica/Inovacao">Tecnica/Inovacao</option>
+            <option value="Tecnica/Inovação">Tecnica/Inovação</option>
             <option value="financiamento">Projetos com Aporte</option>
           </select>
         </div>

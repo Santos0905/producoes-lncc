@@ -115,6 +115,51 @@ def obter_subtipos(db: Session = Depends(get_mysql_db), tipo: str | None = None)
         traceback.print_exc()
         return {"subtipos": []}
 
+@app.get("/api/producoes/por-ano")
+def producoes_por_ano(db: Session = Depends(get_mysql_db), tipo: str | None = None, subtipo: str | None = None, ano: int | None = None):
+    try:
+        tipo_norm = normalizar_tipo(tipo)
+        subtipo_filtro = subtipo if subtipo and subtipo != "Todos" else None
+        
+        params = {}
+        if isinstance(ano, int):
+            params["ano_filtro"] = ano
+        if subtipo_filtro:
+            params["subtipo_filtro"] = subtipo_filtro
+        
+        where = "WHERE p.public = 1"
+        if isinstance(ano, int):
+            where += " AND p.year = :ano_filtro"
+        
+        if tipo_norm in TIPO_TABELA:
+            table, _, fk, join_table = TIPO_TABELA[tipo_norm]
+            sub_where = f" AND j.name = :subtipo_filtro" if subtipo_filtro else ""
+            query = f"SELECT p.year, COUNT(*) as total FROM {table} p LEFT JOIN {join_table} j ON p.{fk} = j.id {where} {sub_where} GROUP BY p.year ORDER BY p.year ASC"
+            res = db.execute(text(query), params).fetchall()
+            dados = [{"ano": r[0], "total": r[1]} for r in res]
+        else:
+            # UNION de todos os tipos
+            selects = []
+            for k, v in TIPO_TABELA.items():
+                table, _, fk, join_table = v
+                sub_where = f" AND j.name = :subtipo_filtro" if subtipo_filtro else ""
+                selects.append(f"SELECT p.year, COUNT(*) as total FROM {table} p LEFT JOIN {join_table} j ON p.{fk} = j.id {where} {sub_where} GROUP BY p.year")
+            
+            query = " UNION ALL ".join(selects) + " ORDER BY year ASC"
+            raw_results = db.execute(text(query), params).fetchall()
+            
+            # Agregar por ano
+            dados_por_ano = {}
+            for row in raw_results:
+                y = row[0]
+                dados_por_ano[y] = dados_por_ano.get(y, 0) + row[1]
+            dados = [{"ano": y, "total": t} for y, t in sorted(dados_por_ano.items())]
+        
+        return {"dados": dados}
+    except Exception:
+        traceback.print_exc()
+        return {"dados": []}
+
 @app.get("/api/health")
 def health_check(db: Session = Depends(get_mysql_db)):
     try: return {"status": "healthy", "mysql": "connected", "result": db.execute(text("SELECT 1")).scalar()}
