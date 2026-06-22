@@ -21,7 +21,6 @@ const ProductionYearChart = ({ tipo, subtipo, ano }) => {
       setCarregando(true);
       setErro(null);
       try {
-        // Busca todas as produções sem paginação para agrupar por ano
         const res = await api.get('/api/producoes/por-ano', {
           params: {
             tipo: tipo === 'Todos' ? null : tipo,
@@ -32,7 +31,6 @@ const ProductionYearChart = ({ tipo, subtipo, ano }) => {
 
         const anos = res.data?.dados || [];
         
-        // Calcula o acumulado
         let acumulado = 0;
         const dataFormatada = anos
           .sort((a, b) => a.ano - b.ano)
@@ -60,11 +58,11 @@ const ProductionYearChart = ({ tipo, subtipo, ano }) => {
 
   if (carregando) {
     return (
-      <div className="mx-4" style={{ padding: '2rem', textAlign: 'center', backgroundColor: '#fff', borderRadius: '0.5rem', marginBottom: '2rem' }}>
-        <div className="spinner-border" role="status" style={{ color: 'var(--lncc-blue)', width: 24, height: 24 }}>
-          <span className="visually-hidden">Carregando gráfico...</span>
+      <div style={{ marginLeft: '1rem', marginRight: '1rem', padding: '2rem', textAlign: 'center', backgroundColor: '#fff', borderRadius: '0.5rem', marginBottom: '2rem' }}>
+        <div style={{ borderRadius: '50%', border: '3px solid #e5e7eb', borderTopColor: 'var(--lncc-blue)', width: 24, height: 24, animation: 'spin 1s linear infinite', display: 'inline-block' }}>
+          <span style={{ display: 'none' }}>Carregando gráfico...</span>
         </div>
-        <p className="mt-2 mb-0" style={{ color: '#64748b', fontWeight: 600 }}>
+        <p style={{ marginTop: '0.5rem', marginBottom: 0, color: '#64748b', fontWeight: 600 }}>
           Carregando gráfico de produções...
         </p>
       </div>
@@ -73,8 +71,8 @@ const ProductionYearChart = ({ tipo, subtipo, ano }) => {
 
   if (erro) {
     return (
-      <div className="mx-4" style={{ padding: '1.5rem', backgroundColor: '#fef2f2', borderLeft: '4px solid #ef4444', marginBottom: '2rem', borderRadius: '0.5rem' }}>
-        <p className="mb-0" style={{ color: '#b91c1c', fontWeight: 700 }}>
+      <div style={{ marginLeft: '1rem', marginRight: '1rem', padding: '1.5rem', backgroundColor: '#fef2f2', borderLeft: '4px solid #ef4444', marginBottom: '2rem', borderRadius: '0.5rem' }}>
+        <p style={{ marginBottom: 0, color: '#b91c1c', fontWeight: 700 }}>
           ⚠️ {erro}
         </p>
       </div>
@@ -83,8 +81,8 @@ const ProductionYearChart = ({ tipo, subtipo, ano }) => {
 
   if (chartData.length === 0) {
     return (
-      <div className="mx-4" style={{ padding: '1.5rem', backgroundColor: '#f1f5f9', textAlign: 'center', marginBottom: '2rem', borderRadius: '0.5rem' }}>
-        <p className="mb-0" style={{ color: '#64748b', fontWeight: 600 }}>
+      <div style={{ marginLeft: '1rem', marginRight: '1rem', padding: '1.5rem', backgroundColor: '#f1f5f9', textAlign: 'center', marginBottom: '2rem', borderRadius: '0.5rem' }}>
+        <p style={{ marginBottom: 0, color: '#64748b', fontWeight: 600 }}>
           Sem dados disponíveis para o período selecionado
         </p>
       </div>
@@ -92,9 +90,9 @@ const ProductionYearChart = ({ tipo, subtipo, ano }) => {
   }
 
   return (
-    <div className="mx-4" style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#fff', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+    <div style={{ marginLeft: '1rem', marginRight: '1rem', marginBottom: '2rem', padding: '1.5rem', backgroundColor: '#fff', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       <div style={{ marginBottom: '1.5rem' }}>
-        <h3 className="h5 mb-0 fw-semibold" style={{ color: '#0f172a' }}>
+        <h3 style={{ fontSize: '1rem', marginBottom: 0, fontWeight: 600, color: '#0f172a' }}>
           Total Acumulativo de Produções por Ano
         </h3>
       </div>

@@ -43,7 +43,6 @@ const Producoes = () => {
     [tipoFiltro, subtipoFiltro, anoParam]
   );
 
-  // Buscar subtipos disponíveis quando o tipo muda
   useEffect(() => {
     const buscarSubtipos = async () => {
       setCarregandoSubtipos(true);
@@ -136,11 +135,22 @@ const Producoes = () => {
 
   const producoesVisiveis = listaProducoes;
 
+  const formatarTipo = (tipo) => {
+    if (!tipo) return tipo;
+    const tipoMap = {
+      'Bibliografica': 'Bibliográfica',
+      'Tecnica/Inovacao': 'Técnica/Inovação',
+      'Projetos com Aporte': 'Projetos com Aporte'
+    };
+    return tipoMap[tipo] || tipo;
+  };
+
   const getTipoBadgeColor = (tipo) => {
     switch (tipo) {
       case 'Bibliografica':
         return { bg: '#e0e7ff', text: '#3730a3' };
-      case 'Tecnica/Inovação':
+      case 'Tecnica/Inovacao':
+      case 'Técnica/Inovação':
         return { bg: '#fce7f3', text: '#9f1239' };
       case 'Projetos com Aporte':
         return { bg: '#dcfce7', text: '#166534' };
@@ -154,173 +164,212 @@ const Producoes = () => {
   };
 
   return (
-    <div className="py-4">
+    <div style={{ paddingTop: '1rem', paddingBottom: '1rem' }}>
       <DashboardCards />
 
       <ProductionYearChart tipo={tipoFiltro} subtipo={subtipoFiltro} ano={anoFiltro} />
 
-      <div className="mx-4 producoes-filtros">
-        <div className="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+      <div style={{ marginLeft: '1rem', marginRight: '1rem', marginTop: '0.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', marginTop: '-1rem', marginBottom: '1rem' }}>
           <div>
-            <h3 className="h4 mb-0 fw-semibold" style={{ color: '#0f172a' }}>
-              Produções
+            <h3 style={{ fontSize: '1.5rem', marginBottom: 0, fontWeight: 600, color: '#0f172a' }}>
+              Filtro de Produções
             </h3>
           </div>
         </div>
 
-        {/* 1) Campo Ano */}
-        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ paddingTop: 6, paddingBottom: 8 }}>
-          <label htmlFor="anoFiltro" style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}>
-            Ano
-          </label>
-          <input
-            id="anoFiltro"
-            type="number"
-            className="form-control form-control-sm"
-            style={{ maxWidth: 140 }}
-            value={anoFiltro}
-            onChange={(e) => setAnoFiltro(e.target.value)}
-            placeholder="Ex: 2025"
-          />
-        </div>
+        {/* Container para os filtros lado a lado */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1.5rem', flexWrap: 'wrap' }}>
+          {/* Campo Ano */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label htmlFor="anoFiltro" style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}>
+              Ano
+            </label>
+            <input
+              id="anoFiltro"
+              type="number"
+              style={{
+                maxWidth: 140,
+                padding: '0.375rem 0.5rem',
+                fontSize: '0.875rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '0.25rem',
+                fontFamily: 'inherit'
+              }}
+              value={anoFiltro}
+              onChange={(e) => setAnoFiltro(e.target.value)}
+              placeholder="Ex: 2025"
+            />
+          </div>
 
-        {/* 2) Campo Tipo */}
-        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ paddingBottom: 8 }}>
-          <label htmlFor="tipoFiltro" style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}>
-            Tipo
-          </label>
-          <select
-            id="tipoFiltro"
-            className="form-select form-select-sm"
-            style={{ maxWidth: 280 }}
-            value={tipoFiltro}
-            onChange={(e) => setTipoFiltro(e.target.value)}
-          >
-            <option value="Todos">Todos</option>
-            <option value="Bibliografica">Bibliografica</option>
-            <option value="Tecnica/Inovação">Tecnica/Inovação</option>
-            <option value="financiamento">Projetos com Aporte</option>
-          </select>
-        </div>
+          {/* Campo Tipo */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label htmlFor="tipoFiltro" style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}>
+              Tipo
+            </label>
+            <select
+              id="tipoFiltro"
+              style={{
+                maxWidth: 280,
+                padding: '0.375rem 0.5rem',
+                fontSize: '0.875rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '0.25rem',
+                fontFamily: 'inherit'
+              }}
+              value={tipoFiltro}
+              onChange={(e) => setTipoFiltro(e.target.value)}
+            >
+              <option value="Todos">Todos</option>
+              <option value="Bibliografica">Bibliográfica</option>
+              <option value="Tecnica/Inovacao">Técnica/Inovação</option>
+              <option value="financiamento">Projetos com Aporte</option>
+            </select>
+          </div>
 
-        {/* 3) Campo Subtipo */}
-        <div className="d-flex align-items-center gap-2 flex-wrap" style={{ paddingBottom: 2 }}>
-          <label htmlFor="subtipoFiltro" style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}>
-            Subtipo {carregandoSubtipos && <small>(carregando...)</small>}
-          </label>
-          <select
-            id="subtipoFiltro"
-            className="form-select form-select-sm"
-            style={{ maxWidth: 380 }}
-            value={subtipoFiltro}
-            onChange={(e) => setSubtipoFiltro(e.target.value)}
-            disabled={carregandoSubtipos || subtiposDisponveis.length === 0}
-          >
-            <option value="Todos">Todos ({subtiposDisponveis.length})</option>
-            {subtiposDisponveis && subtiposDisponveis.length > 0 ? (
-              subtiposDisponveis.map((subtipo) => (
-                <option key={subtipo} value={subtipo}>
-                  {subtipo}
-                </option>
-              ))
-            ) : (
-              <option disabled>Carregando subtipos...</option>
-            )}
-          </select>
+          {/* Campo Subtipo */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label htmlFor="subtipoFiltro" style={{ fontSize: '.875rem', color: '#64748b', fontWeight: 600 }}>
+              Subtipo {carregandoSubtipos && <small>(carregando...)</small>}
+            </label>
+            <select
+              id="subtipoFiltro"
+              style={{
+                maxWidth: 380,
+                padding: '0.375rem 0.5rem',
+                fontSize: '0.875rem',
+                border: '1px solid #d1d5db',
+                borderRadius: '0.25rem',
+                fontFamily: 'inherit'
+              }}
+              value={subtipoFiltro}
+              onChange={(e) => setSubtipoFiltro(e.target.value)}
+              disabled={carregandoSubtipos || subtiposDisponveis.length === 0}
+            >
+              <option value="Todos">Todos ({subtiposDisponveis.length})</option>
+              {subtiposDisponveis && subtiposDisponveis.length > 0 ? (
+                subtiposDisponveis.map((subtipo) => (
+                  <option key={subtipo} value={subtipo}>
+                    {subtipo}
+                  </option>
+                ))
+              ) : (
+                <option disabled>Carregando subtipos...</option>
+              )}
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="mx-4 producoes-list-card" style={{ position: 'relative' }}>
+      <div style={{ marginLeft: '1rem', marginRight: '1rem', marginTop: '1rem', backgroundColor: '#ffffff', border: '1px solid rgba(15,23,42,.08)', borderRadius: '0.5rem', boxShadow: '0 8px 24px rgba(0,0,0,.04)', overflow: 'hidden', position: 'relative' }}>
         {(carregandoLista || carregandoPagina) && (
-          <div className="producoes-loading">
-            <div
-              className="spinner-border"
-              role="status"
-              style={{ color: 'var(--lncc-blue)', width: 28, height: 28 }}
-            >
-              <span className="visually-hidden">Carregando...</span>
+          <div style={{ padding: '2rem 1.25rem', textAlign: 'center' }}>
+            <div style={{ borderRadius: '50%', border: '3px solid #e5e7eb', borderTopColor: 'var(--lncc-blue)', width: 28, height: 28, animation: 'spin 1s linear infinite', display: 'inline-block' }}>
+              <span style={{ display: 'none' }}>Carregando...</span>
             </div>
-            <p className="mt-2 mb-0" style={{ color: '#64748b', fontWeight: 600 }}>
+            <p style={{ marginTop: '0.5rem', marginBottom: 0, color: '#64748b', fontWeight: 600 }}>
               Carregando produções...
             </p>
-            <p className="mb-0" style={{ color: '#94a3b8', fontSize: '.875rem' }}>
+            <p style={{ marginBottom: 0, color: '#94a3b8', fontSize: '.875rem', marginTop: '0.25rem' }}>
               Por favor, aguarde enquanto buscamos os dados
             </p>
           </div>
         )}
 
         {erroLista && !carregandoLista && !carregandoPagina && (
-          <div className="p-4" style={{ background: '#fef2f2', borderLeft: '4px solid #ef4444' }}>
-            <p className="mb-0" style={{ color: '#b91c1c', fontWeight: 700 }}>
+          <div style={{ padding: '1rem', background: '#fef2f2', borderLeft: '4px solid #ef4444' }}>
+            <p style={{ marginBottom: 0, color: '#b91c1c', fontWeight: 700 }}>
               ⚠️ {erroLista}
             </p>
           </div>
         )}
 
         {!carregandoLista && !carregandoPagina && !erroLista && listaProducoes.length === 0 && (
-          <div className="producoes-empty">
-            <p className="mb-1" style={{ color: '#64748b', fontWeight: 600 }}>
+          <div style={{ padding: '2rem 1.25rem', textAlign: 'center' }}>
+            <p style={{ marginBottom: '0.25rem', color: '#64748b', fontWeight: 600, margin: 0 }}>
               Nenhuma produção encontrada
             </p>
-            <p className="mb-0" style={{ color: '#94a3b8', fontSize: '.875rem' }}>
+            <p style={{ marginBottom: 0, color: '#94a3b8', fontSize: '.875rem', marginTop: '0.25rem' }}>
               Verifique se existem dados no banco de dados com os filtros selecionados
             </p>
           </div>
         )}
 
         {!carregandoLista && !carregandoPagina && Array.isArray(listaProducoes) && listaProducoes.length > 0 && (
-          <div className="producoes-list-header-divider">
+          <div style={{ borderTop: '1px solid rgba(15,23,42,.06)' }}>
             {producoesVisiveis.map((item, index) => {
               const itemId = item && item.id ? item.id : `producao-${index}`;
               const tipoBadgeColor = getTipoBadgeColor(item?.tipo);
               const subtipoBadgeColor = getSubtipoBadgeColor();
 
               return (
-                <article key={itemId} className="producoes-item-card">
-                  {/* Badges: Tipo + Subtipo */}
-                  <div className="d-flex align-items-start justify-content-start gap-2 flex-wrap mb-3">
-                    {/* Badge Tipo */}
-                    <span 
-                      className="badge fw-semibold" 
-                      style={{
-                        backgroundColor: tipoBadgeColor.bg,
-                        color: tipoBadgeColor.text,
-                        fontSize: '0.75rem',
-                        padding: '0.35rem 0.65rem',
-                        borderRadius: '0.25rem'
-                      }}
-                      title={item?.tipo}
-                    >
-                      {(item && item.tipo) || 'Tipo'}
+                <article key={itemId} style={{
+                  padding: '1.25rem 1.5rem',
+                  transition: 'transform .18s ease, box-shadow .18s ease, background-color .18s ease',
+                  borderBottom: index < producoesVisiveis.length - 1 ? '1px solid rgba(15,23,42,.06)' : 'none',
+                  background: 'linear-gradient(180deg, rgba(248,250,252,.55), rgb(255, 255, 255))',
+                  cursor: 'pointer'
+                }} onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.background = 'linear-gradient(180deg, rgba(234,245,255,.7), rgb(255, 255, 255))';
+                  e.currentTarget.style.boxShadow = '0 14px 30px rgba(0,0,0,.06)';
+                }} onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.background = 'linear-gradient(180deg, rgba(248,250,252,.55), rgb(255, 255, 255))';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}>
+                  {/* Badges */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                    <span style={{
+                      backgroundColor: tipoBadgeColor.bg,
+                      color: tipoBadgeColor.text,
+                      fontSize: '0.75rem',
+                      padding: '0.35rem 0.65rem',
+                      borderRadius: '0.25rem',
+                      fontWeight: 600
+                    }}>
+                      {formatarTipo((item && item.tipo) || 'Tipo')}
                     </span>
                     
-                    {/* Badge Subtipo */}
                     {item?.subtipo && (
-                      <span 
-                        className="badge fw-semibold" 
-                        style={{
-                          backgroundColor: subtipoBadgeColor.bg,
-                          color: subtipoBadgeColor.text,
-                          fontSize: '0.75rem',
-                          padding: '0.35rem 0.65rem',
-                          borderRadius: '0.25rem'
-                        }}
-                        title={item?.subtipo}
-                      >
+                      <span style={{
+                        backgroundColor: subtipoBadgeColor.bg,
+                        color: subtipoBadgeColor.text,
+                        fontSize: '0.75rem',
+                        padding: '0.35rem 0.65rem',
+                        borderRadius: '0.25rem',
+                        fontWeight: 600
+                      }}>
                         {item.subtipo}
                       </span>
                     )}
                   </div>
 
                   {/* Título */}
-                  <h4 className="producoes-title producoes-title-single-line">
+                  <h4 style={{
+                    marginTop: '0.375rem',
+                    fontWeight: 700,
+                    color: '#0f172a',
+                    lineHeight: 1.2,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 4,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%',
+                    margin: 0,
+                    marginBottom: '0.5rem'
+                  }}>
                     {(item && item.titulo) || 'Título não informado'}
                   </h4>
 
-                  {/* Meta: Autores + Ano */}
-                  <p className="producoes-meta">
-                   
-                    <span className="producoes-meta-sep">•</span>
+                  {/* Meta */}
+                  <p style={{
+                    margin: 0,
+                    color: '#64748b',
+                    fontSize: '.875rem'
+                  }}>
+                    <span style={{ display: 'inline-block', width: '.45rem', textAlign: 'center', color: '#cbd5e1' }}>•</span>
                     {(item && item.ano) || 'Ano N/A'}
                   </p>
                 </article>
@@ -328,11 +377,19 @@ const Producoes = () => {
             })}
 
             {total > pageSize && (
-                <div className="producoes-pagination" style={{ padding: '0 1.5rem 1.25rem', marginTop: '1.2rem' }}>
+              <div style={{ padding: '0 1.5rem 1.25rem', marginTop: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '0.85rem', flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  className="btn btn-sm"
-                  style={{ border: '1px solid rgba(15,23,42,.15)', color: '#0f172a' }}
+                  style={{
+                    border: '1px solid rgba(15,23,42,.15)',
+                    color: '#0f172a',
+                    padding: '0.375rem 0.75rem',
+                    fontSize: '0.875rem',
+                    borderRadius: '0.25rem',
+                    backgroundColor: '#ffffff',
+                    cursor: offset === 0 || carregandoPagina ? 'not-allowed' : 'pointer',
+                    opacity: offset === 0 || carregandoPagina ? 0.5 : 1
+                  }}
                   onClick={() => setOffset((prev) => Math.max(0, prev - pageSize))}
                   disabled={offset === 0 || carregandoPagina}
                 >
@@ -345,8 +402,16 @@ const Producoes = () => {
 
                 <button
                   type="button"
-                  className="btn btn-sm"
-                  style={{ border: '1px solid rgba(15,23,42,.15)', color: '#0f172a' }}
+                  style={{
+                    border: '1px solid rgba(15,23,42,.15)',
+                    color: '#0f172a',
+                    padding: '0.375rem 0.75rem',
+                    fontSize: '0.875rem',
+                    borderRadius: '0.25rem',
+                    backgroundColor: '#ffffff',
+                    cursor: !hasMore || carregandoPagina ? 'not-allowed' : 'pointer',
+                    opacity: !hasMore || carregandoPagina ? 0.5 : 1
+                  }}
                   onClick={() => setOffset((prev) => prev + pageSize)}
                   disabled={!hasMore || carregandoPagina}
                 >

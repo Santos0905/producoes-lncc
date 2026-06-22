@@ -2,16 +2,18 @@ import Producoes from "./pages/Producoes";
 
 export default function App() {
   return (
-    <div className="min-vh-100" style={{ backgroundColor: "#F4F3F0" }}>
-      <header className="sticky-top shadow-sm" style={{ backgroundColor: "#F5F7FF" }}>
-        <div className="container-xl py-4 flex-column flex-lg-row d-flex align-items-lg-center justify-content-lg-between gap-3">
+    <div style={{ minHeight: '100vh', backgroundColor: "#F4F3F0" }}>
+      <header style={{ position: 'sticky', top: 0, backgroundColor: "#F5F7FF", boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', zIndex: 100 }}>
+        <div style={{ maxWidth: '1280px', marginLeft: 'auto', marginRight: 'auto', paddingTop: '1rem', paddingBottom: '1rem', paddingLeft: '1rem', paddingRight: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.75rem' }}>
           <div>
-            <p className="small fw-semibold text-uppercase tracking-wide text-primary">LNCC SDumont</p>
-            <h1 className="mt-3 display-4 fw-semibold text-dark">Painel de Produções</h1>
+            <p style={{ fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--lncc-blue)', margin: 0 }}>LNCC SDumont</p>
+            <h1 style={{ marginTop: '0.75rem', fontSize: '2.25rem', fontWeight: 600, color: '#1f2937' }}>Painel de Produções</h1>
           </div>
         </div>
       </header>
-      <main className="container-xl py-4 py-lg-5"><Producoes /></main>
+      <main style={{ maxWidth: '1280px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '1rem', paddingRight: '1rem', paddingTop: '1rem', paddingBottom: '1.25rem' }}>
+        <Producoes />
+      </main>
     </div>
   );
 }

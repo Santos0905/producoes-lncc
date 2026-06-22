@@ -38,21 +38,62 @@ export default function DashboardCards() {
   ];
 
   return (
-    <section className="px-4 mb-4">
+    <section style={{ paddingLeft: '1rem', paddingRight: '1rem', marginBottom: '1rem' }}>
       {errorLog && (
-        <div className="alert alert-danger text-center" role="alert">
+        <div style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '1rem', borderRadius: '0.5rem', textAlign: 'center', marginBottom: '1rem' }}>
           {errorLog} <br /><small>Verifique se o container <strong>fastapi_app</strong> está de pé.</small>
         </div>
       )}
-      <div className="row g-4 align-items-stretch">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', alignItems: 'stretch' }}>
         {cardsData.map((c, i) => (
-          <div key={i} className="col-12 col-md-6 col-lg-5 col-xl-3">
-            <article className="card-hover-effect card h-100 border-0 p-3 text-center">
-              <div className="mb-2">
-                <span className="badge bg-primary px-3 py-2 fs-6 fw-semibold mb-4 text-wrap" style={{ lineHeight: 1.1 }}>{c.title}</span>
+          <div key={i}>
+            <article className="card-hover-effect" style={{
+              backgroundColor: '#ffffff',
+              border: 'none',
+              borderRadius: '0.5rem',
+              padding: '1.5rem 0.75rem',
+              textAlign: 'center',
+              height: '100%',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div style={{ marginBottom: '0.5rem' }}>
+                <span style={{
+                  display: 'inline-block',
+                  backgroundColor: 'var(--lncc-blue)',
+                  color: 'white',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '0.25rem',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  marginBottom: '1rem',
+                  lineHeight: 1.1,
+                  wordWrap: 'break-word'
+                }}>
+                  {c.title}
+                </span>
               </div>
-              <p className="display-6 fw-bold text-dark mb-2 lh-1">{loading ? "..." : formatarNumero(c.val)}</p>
-              <p className="h6 fw-semibold text-muted lh-lg mb-1">{c.desc}</p>
+              <p style={{
+                fontSize: '1.875rem',
+                fontWeight: 'bold',
+                color: '#1f2937',
+                marginBottom: '0.5rem',
+                marginTop: 0,
+                lineHeight: 1
+              }}>
+                {loading ? "..." : formatarNumero(c.val)}
+              </p>
+              <p style={{
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                color: '#6b7280',
+                marginBottom: '0.25rem',
+                marginTop: 'auto',
+                lineHeight: 1.5
+              }}>
+                {c.desc}
+              </p>
             </article>
           </div>
         ))}
