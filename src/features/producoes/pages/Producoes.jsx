@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import DashboardCards from '../components/DashboardCards';
+import DashboardCards from '../../dashboard/components/DashboardCards';
 import ProductionYearChart from '../components/ProductionYearChart';
 import api from '../services/api';
 import './Producoes.css';

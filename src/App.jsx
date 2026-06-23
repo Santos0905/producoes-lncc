@@ -1,4 +1,4 @@
-import Producoes from "./pages/Producoes";
+import Producoes from "./features/producoes/pages/Producoes";
 
 export default function App() {
   return (
