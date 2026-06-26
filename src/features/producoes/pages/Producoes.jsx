@@ -305,18 +305,9 @@ const Producoes = () => {
               return (
                 <article key={itemId} style={{
                   padding: '1.25rem 1.5rem',
-                  transition: 'transform .18s ease, box-shadow .18s ease, background-color .18s ease',
-                  borderBottom: index < producoesVisiveis.length - 1 ? '1px solid rgba(15,23,42,.06)' : 'none',
+                  borderBottom: '4px solid #cbd5e1',
                   background: 'linear-gradient(180deg, rgba(248,250,252,.55), rgb(255, 255, 255))',
                   cursor: 'pointer'
-                }} onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-3px)';
-                  e.currentTarget.style.background = 'linear-gradient(180deg, rgba(234,245,255,.7), rgb(255, 255, 255))';
-                  e.currentTarget.style.boxShadow = '0 14px 30px rgba(0,0,0,.06)';
-                }} onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.background = 'linear-gradient(180deg, rgba(248,250,252,.55), rgb(255, 255, 255))';
-                  e.currentTarget.style.boxShadow = 'none';
                 }}>
                   {/* Badges */}
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
@@ -377,7 +368,7 @@ const Producoes = () => {
             })}
 
             {total > pageSize && (
-              <div style={{ padding: '0 1.5rem 1.25rem', marginTop: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '0.85rem', flexWrap: 'wrap' }}>
+              <div style={{ padding: '1.5rem 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   style={{
@@ -396,7 +387,7 @@ const Producoes = () => {
                   Anterior
                 </button>
 
-                <span style={{ margin: '0 0.75rem', color: '#64748b', fontWeight: 700 }}>
+                <span style={{ color: '#64748b', fontWeight: 700 }}>
                   Página {Math.floor(offset / pageSize) + 1} de {Math.ceil(total / pageSize)}
                 </span>
 
