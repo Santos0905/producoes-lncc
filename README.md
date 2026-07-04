@@ -37,7 +37,7 @@
 
 ### Backend
 - **FastAPI** - Framework Python
-- **SQLAlchemy** - ORM
+- **MySql** - ORM
 - **PostgreSQL 15** - Banco de Dados
 - **Uvicorn** - Servidor ASGI
 
@@ -130,8 +130,8 @@ Projeto idealizado e desenvolvido por:
 
 | Integrante | Contato Profissional |
 | :--- | :--- |
-| **Paulo** | [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/pauloferreirarh/) [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/phaulosantosdev) |
 | **Rodrigo** | [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/rodrigo-carvalho-santos-7a16901aa/) [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/Santos0905) |
+| **Paulo** | [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/pauloferreirarh/) [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/phaulosantosdev) |
 
 
 ## 📄 Licença
