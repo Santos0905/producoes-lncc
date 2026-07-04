@@ -36,10 +36,10 @@
 - **Bootstrap 5.3.3** - CSS Framework
 
 ### Backend
-- **FastAPI** - Framework Python
-- **MySql** - ORM
-- **PostgreSQL 15** - Banco de Dados
-- **Uvicorn** - Servidor ASGI
+- FastAPI – Framework Python
+- MySQL – Banco de Dados Relacional
+- SQLAlchemy – ORM
+- Uvicorn – Servidor ASGI
 
 ### DevOps
 - **Docker** - Containerização
